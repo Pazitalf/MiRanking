@@ -10328,5 +10328,80 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
 @media(prefers-reduced-motion:reduce){#mirProfileModal *{transition:none!important}}
 </style>
 
+<style id="miranking-legal-pages">
+#mrLegalFooter{max-width:1100px;margin:28px auto 0;padding:18px 16px 28px;border-top:1px solid var(--border,#2a374c);color:var(--muted,#96a2b4);font-size:12px;text-align:center}
+#mrLegalFooter .mr-legal-links{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-bottom:10px}
+#mrLegalFooter button{min-height:30px;padding:5px 2px;border:0;background:transparent;color:var(--text,#f4f7fb);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+#mrLegalFooter button:hover{color:#6ee7c8}
+#mrLegalModal{position:fixed;inset:0;z-index:12000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.78)}
+#mrLegalModal.open{display:flex}
+#mrLegalModal .mr-legal-card{width:min(820px,100%);max-height:min(88dvh,900px);overflow:auto;padding:clamp(18px,4vw,30px);border:1px solid var(--border,#2a374c);border-radius:18px;background:var(--panel,#101827);color:var(--text,#f4f7fb);box-shadow:0 24px 80px #000}
+#mrLegalModal .mr-legal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-1px;background:var(--panel,#101827);padding:0 0 12px;border-bottom:1px solid var(--border,#2a374c)}
+#mrLegalModal h2{font-size:clamp(20px,4vw,27px);margin:0}
+#mrLegalModal h3{font-size:15px;margin:22px 0 7px;color:#83e8cf}
+#mrLegalModal p,#mrLegalModal li{font-size:13px;line-height:1.65;color:var(--text,#f4f7fb)}
+#mrLegalModal .mr-legal-close{flex:0 0 40px;min-height:40px;font-size:20px}
+#mrLegalModal a{color:#83e8cf}
+@media(max-width:560px){#mrLegalFooter{padding-bottom:calc(24px + env(safe-area-inset-bottom))}#mrLegalModal{padding:8px}#mrLegalModal .mr-legal-card{max-height:calc(100dvh - 16px);border-radius:14px}}
+</style>
+<footer id="mrLegalFooter">
+  <nav class="mr-legal-links" aria-label="Información legal">
+    <button type="button" data-mr-legal="privacy">Política de privacidad</button>
+    <button type="button" data-mr-legal="terms">Términos y condiciones</button>
+    <button type="button" data-mr-legal="contact">Contacto y derechos de autor</button>
+  </nav>
+  <div>MiRanking · Proyecto independiente de organización y puntuación de anime.</div>
+</footer>
+<div id="mrLegalModal" role="dialog" aria-modal="true" aria-labelledby="mrLegalTitle" aria-hidden="true">
+  <section class="mr-legal-card">
+    <header class="mr-legal-head"><h2 id="mrLegalTitle">Información legal</h2><button type="button" class="mr-legal-close" aria-label="Cerrar información legal">×</button></header>
+    <article data-mr-legal-content="privacy" hidden>
+      <p><strong>Última actualización:</strong> 12 de octubre de 2026.</p>
+      <h3>1. Responsable y contacto</h3><p>MiRanking es un proyecto independiente. Para consultas sobre privacidad o datos personales, escribí a <a href="mailto:mirankingoficial@gmail.com">mirankingoficial@gmail.com</a>.</p>
+      <h3>2. Datos que puede tratar la aplicación</h3><p>Según las funciones que uses, MiRanking puede tratar datos de cuenta para iniciar sesión, nombre visible y datos del perfil, puntuaciones y listas de anime, opiniones publicadas, y relaciones o interacciones con otros usuarios. Evitá incluir datos sensibles o información privada en tu perfil y opiniones.</p>
+      <h3>3. Servicios externos</h3><p>La aplicación utiliza Supabase para funciones de autenticación y sincronización de datos. El acceso a portadas y otra información de anime puede depender de servicios externos. Esos proveedores pueden tratar datos técnicos de conexión conforme a sus propias políticas.</p>
+      <h3>4. Almacenamiento y seguridad</h3><p>Parte de la información de la aplicación puede guardarse en el almacenamiento del navegador y otra parte puede sincronizarse con servicios remotos. No ingreses tu contraseña en páginas que no sean las pantallas legítimas de acceso de MiRanking. Se aplican medidas razonables para proteger el funcionamiento y los datos, pero ningún servicio en internet puede garantizar seguridad absoluta.</p>
+      <h3>5. Publicaciones y visibilidad</h3><p>Las puntuaciones, opiniones, nombre visible y actividad social pueden mostrarse a otros usuarios según las funciones y configuraciones de la aplicación. No publiques información que no quieras compartir.</p>
+      <h3>6. Cookies, publicidad y analítica</h3><p>El navegador o los servicios integrados pueden utilizar almacenamiento local y tecnologías similares necesarias para el funcionamiento. Actualmente esta versión no incorpora anuncios publicitarios propios. Si se integra Google AdSense u otro proveedor publicitario en el futuro, esta política deberá actualizarse para explicar las cookies, identificadores, personalización y opciones de consentimiento aplicables antes de activar esa integración.</p>
+      <h3>7. Conservación y solicitudes</h3><p>Los datos pueden conservarse mientras la cuenta esté activa o sean necesarios para operar la aplicación. Para consultar, corregir o solicitar la eliminación de datos asociados a tu cuenta, escribí a <a href="mailto:mirankingoficial@gmail.com">mirankingoficial@gmail.com</a>, indicando el usuario y el pedido. La solicitud puede requerir verificar que sos titular de la cuenta.</p>
+      <h3>8. Derechos y cambios</h3><p>Las solicitudes se atenderán conforme a la normativa aplicable en Argentina, incluida la Ley 25.326 de Protección de los Datos Personales. Esta política puede actualizarse si cambian las funciones o los servicios. La versión vigente se publicará en esta página.</p>
+    </article>
+    <article data-mr-legal-content="terms" hidden>
+      <p><strong>Última actualización:</strong> 12 de octubre de 2026.</p>
+      <h3>1. Servicio</h3><p>MiRanking es una herramienta independiente para organizar, puntuar y compartir preferencias sobre anime. No está afiliada oficialmente a estudios, editoriales, plataformas de streaming ni titulares de las obras mencionadas.</p>
+      <h3>2. Cuenta y uso responsable</h3><p>Debés proporcionar información de cuenta que puedas usar legítimamente, proteger tus credenciales y no acceder a cuentas ajenas. No uses la aplicación para acosar, suplantar, distribuir malware, vulnerar el servicio o interferir con otros usuarios.</p>
+      <h3>3. Contenido de usuarios</h3><p>Conservás la responsabilidad por las opiniones, nombres, imágenes y demás contenido que publiques. No publiques contenido ilegal, amenazas, datos personales de terceros sin autorización ni material que infrinja derechos. Al publicar, autorizás a MiRanking a alojar y mostrar ese contenido dentro de las funciones del servicio; no transferís su propiedad.</p>
+      <h3>4. Anime, imágenes y marcas</h3><p>Los nombres, personajes, imágenes de portadas y marcas de terceros pertenecen a sus respectivos titulares. Se muestran con fines informativos y de identificación de obras. Si sos titular de derechos y considerás que un contenido debe revisarse, contactanos por correo indicando la obra, el material y el motivo de la solicitud.</p>
+      <h3>5. Servicios externos y disponibilidad</h3><p>La aplicación puede depender de proveedores externos para autenticación, sincronización o información de anime. Esos servicios tienen sus propias condiciones. MiRanking puede experimentar interrupciones, errores o cambios de funciones y no garantiza disponibilidad ininterrumpida ni ausencia de pérdida de datos; mantené copias de la información importante cuando sea posible.</p>
+      <h3>6. Publicidad</h3><p>Esta versión no incorpora anuncios propios. Si se agregan anuncios en el futuro, se informará en la política de privacidad y se aplicarán las condiciones del proveedor publicitario.</p>
+      <h3>7. Suspensión y cambios</h3><p>Podemos restringir el acceso ante abusos, riesgos de seguridad o incumplimientos de estas condiciones. Las funciones y los términos pueden cambiar; se publicará la versión actualizada en esta página.</p>
+      <h3>8. Ley aplicable</h3><p>Estas condiciones se interpretan conforme a las leyes aplicables de la República Argentina, sin limitar los derechos irrenunciables que correspondan a los usuarios.</p>
+    </article>
+    <article data-mr-legal-content="contact" hidden>
+      <p><strong>Contacto:</strong> <a href="mailto:mirankingoficial@gmail.com">mirankingoficial@gmail.com</a></p>
+      <h3>Consultas y reportes</h3><p>Podés escribir por problemas de cuenta, privacidad, contenido publicado o solicitudes relacionadas con derechos de autor. Para facilitar la revisión, incluí el enlace o nombre del contenido y una explicación clara. No envíes contraseñas ni datos sensibles por correo.</p>
+      <h3>Derechos de autor</h3><p>MiRanking es un proyecto independiente y no reclama propiedad sobre anime, personajes, nombres, logotipos o portadas pertenecientes a terceros. Los derechos corresponden a sus respectivos titulares. La inclusión de referencias se realiza con fines de identificación y organización personal de contenido audiovisual.</p>
+      <h3>Solicitud de revisión o retiro</h3><p>Si considerás que algún material vulnera tus derechos, escribí a la dirección indicada con tus datos de contacto, identificación del material, ubicación dentro de MiRanking y una descripción de los derechos afectados. Se revisará la solicitud y, si corresponde, se tomarán medidas.</p>
+      <p>© 2026 MiRanking. El nombre y la interfaz de MiRanking corresponden a su proyecto; los derechos sobre obras de terceros permanecen con sus titulares.</p>
+    </article>
+  </section>
+</div>
+<script id="mr-legal-pages-script">
+(function(){
+  const modal=document.getElementById('mrLegalModal');
+  if(!modal)return;
+  const title=document.getElementById('mrLegalTitle');
+  const names={privacy:'Política de privacidad',terms:'Términos y condiciones',contact:'Contacto y derechos de autor'};
+  function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+  document.querySelectorAll('[data-mr-legal]').forEach(btn=>btn.addEventListener('click',()=>{
+    const key=btn.getAttribute('data-mr-legal');
+    modal.querySelectorAll('[data-mr-legal-content]').forEach(section=>section.hidden=section.getAttribute('data-mr-legal-content')!==key);
+    title.textContent=names[key]||'Información legal';modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modal.querySelector('.mr-legal-close')?.focus();
+  }));
+  modal.querySelector('.mr-legal-close')?.addEventListener('click',close);
+  modal.addEventListener('click',e=>{if(e.target===modal)close();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close();});
+})();
+</script>
 </body>
 </html>
