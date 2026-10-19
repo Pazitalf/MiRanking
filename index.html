@@ -7858,7 +7858,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   function applyAuthLanguage(){
     if(!$('mirAuthOverlay'))return;
     const guestCopy={es:'Podés usar MiRanking sin cuenta. Iniciá sesión para guardar tu ranking en la nube y sincronizarlo entre dispositivos.',en:'You can use MiRanking without an account. Sign in to save your ranking to the cloud and sync it across devices.',pt:'Você pode usar o MiRanking sem uma conta. Entre para salvar seu ranking na nuvem e sincronizá-lo entre dispositivos.'};$('mirAuthSubtitle').textContent=guestCopy[lang()]||guestCopy.es;$('mirAuthTabLogin').textContent=tx('login');$('mirAuthTabRegister').textContent=tx('register');
-    const continueText={es:'Seguir sin cuenta',en:'Continue without an account',pt:'Continuar sem conta'}[lang()]||'Seguir sin cuenta';$('mirAuthClose')?.setAttribute('aria-label',continueText);$('mirAuthClose')?.setAttribute('title',continueText);$('mirAuthContinue')?.textContent=continueText;
+    const continueText={es:'Seguir sin cuenta',en:'Continue without an account',pt:'Continuar sem conta'}[lang()]||'Seguir sin cuenta';const closeButton=$('mirAuthClose'),continueButton=$('mirAuthContinue');if(closeButton){closeButton.setAttribute('aria-label',continueText);closeButton.setAttribute('title',continueText)}if(continueButton)continueButton.textContent=continueText;
     $('mirAuthUsernameLabel').textContent=tx('user');$('mirAuthPasswordLabel').textContent=tx('pass');$('mirAuthPassword2Label').textContent=tx('pass2');$('mirAuthNote').textContent=tx('note');
     $('mirAuthSubmit').textContent=authMode==='login'?tx('login'):tx('register');
     $('mirAccountState').textContent=authUser?tx('connected'):tx('logged');$('mirLogoutSettings').textContent=tx('logout');if($('mirAccountDescription'))$('mirAccountDescription').textContent=tx('accountDesc');
@@ -7936,7 +7936,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
     if(isNew){msg(tx('created'),'ok');setTimeout(()=>msg(''),1200)}
   }
   function ensureSupabaseClient(){if(sb?.auth)return sb;if(!window.supabase?.createClient)throw new Error('No se pudo cargar la biblioteca de Supabase.');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return sb}
-  async function initAuth(){hideOverlay();try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');hideOverlay();updateAccountUI();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();hideOverlay();if(session?.user){authUser=session.user;updateAccountUI()}}}
+  async function initAuth(){try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');updateAccountUI();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();if(session?.user){authUser=session.user;updateAccountUI()}}}
   async function changePassword(){
     const current=$('mirCurrentPassword').value,newPass=$('mirNewPassword').value,repeat=$('mirNewPassword2').value;if(newPass.length<8){passwordMsg(tx('badPass'),'error');return}if(newPass!==repeat){passwordMsg(tx('same'),'error');return}if(newPass===current){passwordMsg(tx('passwordSame'),'error');return}
     const username=normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'');if(!username){passwordMsg(tx('passwordUnavailable'),'error');return}
@@ -10123,7 +10123,7 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
 #mrWatchLaterSection .mr-watch-later-count,
 #mrWatchLaterSection #mrWatchLaterCount{display:none!important}
 #mrWatchLaterSection{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin-top:12px!important}
-#mrWatchLaterSection details{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+#mrWatchLaterSection details{background:var(--panel2,#16212b)!important;border:1px solid var(--border,#293744)!important;border-radius:13px!important;box-shadow:none!important;padding:0!important;margin:0!important;overflow:hidden!important}
 #mrWatchLaterSection details>summary{margin:0!important}
 </style>
 
