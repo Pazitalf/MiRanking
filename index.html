@@ -4462,45 +4462,55 @@ function scheduleVisibleNewCovers(){
   },450);
 }
 
+let sharesByScoreIndex=null,sharesByScoreVersion=-1,sharesPreviewCache=new Map();
 function sharesAt(score,currentName){
-  if(Number(score)<=0)return [];
+  const empty=[];empty.total=0;
+  if(Number(score)<=0)return empty;
+  if(!sharesByScoreIndex||sharesByScoreVersion!==catalogDataVersion){
+    sharesByScoreIndex=new Map();
+    for(const x of (data||[])){
+      if(!x||Number(x.score)<=0)continue;
+      if(!sharesByScoreIndex.has(x.score))sharesByScoreIndex.set(x.score,[]);
+      sharesByScoreIndex.get(x.score).push({name:x.name,key:seriesKey(x.name)});
+    }
+    sharesByScoreVersion=catalogDataVersion;
+    sharesPreviewCache.clear();
+  }
   const currentKey=seriesKey(currentName);
-  return data
-    .filter(x=>x.score===score && seriesKey(x.name)!==currentKey)
-    .map(x=>x.name);
+  const cacheKey=String(typeof score)+':'+String(score)+'|'+currentKey;
+  const cached=sharesPreviewCache.get(cacheKey);if(cached)return cached;
+  const names=[],matches=sharesByScoreIndex.get(score)||[];
+  let total=0;
+  for(const x of matches){
+    if(x.key===currentKey)continue;
+    total++;
+    if(names.length<12)names.push(x.name);
+  }
+  names.total=total;
+  if(sharesPreviewCache.size>500)sharesPreviewCache.clear();
+  sharesPreviewCache.set(cacheKey,names);
+  return names;
 }
-
-function addOrUpdateScore(item,score,nickname=''){
+function addOrUpdateScore(item,score,nickname='',options={}){
   const existing=data.find(x=>seriesKey(x.name)===seriesKey(item.name));
   const cleanNick=String(nickname||'').trim().slice(0,200);
   const cleanScore=Math.floor(Math.max(0,Math.min(100,Number(score)||0)));
   if(existing){
     existing.score=cleanScore;
     existing.nickname=cleanNick;
-    // Una nota puesta en modo SAGA es manual y no debe ser reemplazada
-    // por un cálculo de temporadas que todavía esté en 0/sin completar.
     existing.manualSaga=true;
   }else{
-    data.push({
-      name:item.name,
-      score:cleanScore,
-      nickname:cleanNick,
-      genres:item.genres||[],
-      year:item.year,
-      quarter:item.quarter,
-      manualSaga:true
-    });
+    data.push({name:item.name,score:cleanScore,nickname:cleanNick,genres:item.genres||[],year:item.year,quarter:item.quarter,manualSaga:true});
   }
   invalidateScoredCaches();
   save();
   try{
     const m=watchMetaFor(item.name);
-    if(cleanScore>0 && !m.finishedAt)m.finishedAt=Date.now();
+    if(cleanScore>0&&!m.finishedAt)m.finishedAt=Date.now();
     saveWatchMeta(getWatchMeta());
   }catch(e){}
-  render();
+  if(options.render!==false)render();
 }
-
 function commitCurrentSagaScore(){
   if(!selectedNew || scoreMode!=='saga') return;
   const name=selectedNew.name;
@@ -4560,12 +4570,10 @@ function updateShareList(){
   const list=document.getElementById('shareList');
   list.innerHTML='';
   document.getElementById('scoreValue').textContent=s;
-
   if(!arr.length){
     list.innerHTML='<div class="share-empty">Ninguno todavía</div>';
     return;
   }
-
   const frag=document.createDocumentFragment();
   for(const name of arr){
     const item=document.createElement('div');
@@ -4581,8 +4589,13 @@ function updateShareList(){
     getImage(name,img);
   }
   list.appendChild(frag);
+  if(arr.total>arr.length){
+    const note=document.createElement('div');
+    note.className='share-empty';
+    note.textContent='Se muestran '+arr.length+' de '+arr.total+' animes con esta puntuación.';
+    list.appendChild(note);
+  }
 }
-
 function changeSelected(delta){
   selectedNew.score=Math.max(0,Math.min(100,selectedNew.score+delta));
   updateShareList();
@@ -5889,18 +5902,7 @@ function catalogSeasonsFor(name){
   addItems(CATALOG_SEASON_CACHE.get('series:'+targetBaseAlias));
   addItems(CATALOG_TITLE_SEASON_CACHE.get(targetKey));
 
-  // Refuerzo de seguridad: si la serie tiene varias temporadas pero el índice
-  // de portadas/alias no las agrupó igual, las recuperamos directamente desde
-  // el catálogo comparando la clave base de la serie.
-  for(const item of (CATALOG||[])){
-    const itemBase=seasonBaseKey(item.name);
-    const itemAlias=SERIES_ALIAS_GROUPS[itemBase]||itemBase;
-    if(itemBase===targetBase || itemAlias===targetBaseAlias || seriesKey(item.name)===targetSeries){
-      addItems([item]);
-    }
-  }
-
-  // Eliminamos duplicados por seasonId estable.
+  // Los índices por serie, alias y título ya cubren esta búsqueda; evitamos escanear el catálogo por cada anime puntuado.
   const unique=[]; const seenIds=new Set();
   for(const item of candidates){
     const sid=String(item.seasonId||`${item.sagaId||''}-${item.season||''}-${item.name||''}`);
@@ -6045,32 +6047,31 @@ function syncSagaScores(){
 
 // Actualiza directamente Mi Ranking cuando una temporada/capítulo se puntúa
 // desde la pantalla de detalles. Este flujo no siempre tiene selectedNew.
-function applyCalculatedScoreToRanking(name){
+function applyCalculatedScoreToRanking(name,renderAfter=true){
   const cleanName=String(name||'').trim();
-  if(!cleanName || !Array.isArray(data)) return false;
+  if(!cleanName||!Array.isArray(data))return false;
   const calc=sagaCalculatedScore(cleanName);
-  if(calc==null || !Number.isFinite(Number(calc))) return false;
+  if(calc==null||!Number.isFinite(Number(calc)))return false;
   const score=Math.floor(Math.max(0,Math.min(100,Number(calc))));
   const key=seriesKey(cleanName);
-  let existing=data.find(x=>seriesKey(x.name)===key || coverNorm(x.name)===coverNorm(cleanName));
+  let existing=data.find(x=>seriesKey(x.name)===key||coverNorm(x.name)===coverNorm(cleanName));
   if(!existing){
-    const source=(CATALOG||[]).find(x=>seriesKey(x.name)===key || coverNorm(x.name)===coverNorm(cleanName));
-    if(!source) return false;
+    const source=(CATALOG||[]).find(x=>seriesKey(x.name)===key||coverNorm(x.name)===coverNorm(cleanName));
+    if(!source)return false;
     existing={name:source.name,score,genres:Array.isArray(source.genres)?source.genres.slice():[],year:source.year,quarter:source.quarter,nickname:''};
     existing.detailDriven=true;
     data.push(existing);
   }else{
-    if(score===0 && Number(existing.score)>0) return false;
+    if(score===0&&Number(existing.score)>0)return false;
     existing.score=score;
     existing.manualSaga=false;
     existing.detailDriven=true;
   }
   invalidateScoredCaches();
   save();
-  try{render();}catch(e){}
+  if(renderAfter)try{render();}catch(e){}
   return true;
-}
-function escDetail(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+}function escDetail(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 function closeDetail(){document.getElementById('detailModal')?.classList.remove('open');detailContext=null}
 function renderDetail(){
@@ -6617,7 +6618,7 @@ showSagaMode();
       saveSeasonDetails();
     }
     selectedNew.nickname=String(document.getElementById('scoreNickname')?.value||selectedNew.nickname||'').trim().slice(0,200);
-    addOrUpdateScore(selectedNew,target,selectedNew.nickname);
+    addOrUpdateScore(selectedNew,target,selectedNew.nickname,{render:false});
     const ex=data.find(x=>seriesKey(x.name)===seriesKey(selectedNew.name));
     if(ex){ex.manualSaga=true;ex.detailDriven=false;ex.nickname=selectedNew.nickname;save();}
     ensureMetaAndSave(selectedNew.name);
@@ -6690,7 +6691,7 @@ showSagaMode();
     }
     saveSeasonDetails();
     selectedNew.nickname=String(document.getElementById('scoreNickname')?.value||selectedNew.nickname||'').trim().slice(0,200);
-    applyCalculatedScoreToRanking(name);
+    applyCalculatedScoreToRanking(name,false);
     const ex=data.find(x=>seriesKey(x.name)===seriesKey(name));
     if(ex){ex.manualSaga=false;ex.detailDriven=true;ex.nickname=selectedNew.nickname;save();}
     ensureMetaAndSave(name);
@@ -6859,8 +6860,7 @@ showSagaMode();
       // En temporada y capítulo, ✓ termina la sesión y vuelve al lugar desde donde se abrió.
       // Para cambiar de capítulo/temporada primero se toca la opción correspondiente.
       document.getElementById('scoreModal').classList.remove('open');
-      selectedNew=null;selectedEpisode=null;pendingSeasonScores={};pendingEpisodeScores={};scoreDirty=false;scoreMode='saga';
-      render();returnToSource(src);
+      selectedNew=null;selectedEpisode=null;pendingSeasonScores={};pendingEpisodeScores={};scoreDirty=false;scoreMode='saga'; returnToSource(src);
     });
   }
   function installScoreModeButtons(){
@@ -7513,13 +7513,17 @@ dy><button class="print-btn" onclick="window.print()">Imprimir / Guardar como PD
     }
   };
   function t(k){return (I18N[appPrefs.language]||I18N.es)[k]||I18N.es[k]||k}
-  function localStableSagaId(name){
+  const LOCAL_STABLE_SAGA_ID_CACHE=new Map();
+function localStableSagaId(name){
   const base=String(seriesKey(name)||seasonBaseKey(name)||coverNorm(name)||name||'').trim();
+  const cached=LOCAL_STABLE_SAGA_ID_CACHE.get(base);if(cached)return cached;
   let h=1469598103934665603n;const prime=1099511628211n;
   for(let i=0;i<base.length;i++){h^=BigInt(base.charCodeAt(i));h=BigInt.asUintN(64,h*prime);}
-  return 's:'+h.toString(16).padStart(16,'0');
-}
-function migrateHiddenGems(){
+  const id='s:'+h.toString(16).padStart(16,'0');
+  if(LOCAL_STABLE_SAGA_ID_CACHE.size>10000)LOCAL_STABLE_SAGA_ID_CACHE.clear();
+  LOCAL_STABLE_SAGA_ID_CACHE.set(base,id);
+  return id;
+}function migrateHiddenGems(){
   if(!Array.isArray(appPrefs.socialHiddenGems))appPrefs.socialHiddenGems=[];
   const next=new Set(),byLegacy=new Map(),ambiguous=[];
   for(const c of (CATALOG||[])){const legacy=String(c?.sagaId??'').trim(),key=seriesKey(c?.name);if(!legacy||!key)continue;if(!byLegacy.has(legacy))byLegacy.set(legacy,new Set());byLegacy.get(legacy).add(key);}
@@ -8005,18 +8009,45 @@ $('mirAuthTabLogin')?.addEventListener('click',()=>setMode('login'));$('mirAuthT
   const socialEsc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   function socialUserId(){return session?.user?.id||authUser?.id||null}
   function socialUsername(){return normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'')}
-  function socialCatalogEntry(name){const k=seriesKey(name);return CATALOG.find(c=>seriesKey(c.name)===k)||CATALOG.find(c=>coverNorm(c.name)===coverNorm(name))||null}
+let SOCIAL_CATALOG_LOOKUP=null,SOCIAL_CATALOG_LOOKUP_SIGNATURE='';
+  function ensureSocialCatalogLookup(){
+    const sig=String(CATALOG?.length||0)+'|'+String(coverSeriesBaseKeyByTitle?.size||0)+'|'+String(coverSeriesIdByTitle?.size||0);
+    if(SOCIAL_CATALOG_LOOKUP&&SOCIAL_CATALOG_LOOKUP_SIGNATURE===sig)return;
+    SOCIAL_CATALOG_LOOKUP_SIGNATURE=sig;
+    const bySeries=new Map(),byTitle=new Map(),byLegacyId=new Map();
+    for(const c of (CATALOG||[])){
+      const series=seriesKey(c?.name),title=coverNorm(c?.name);
+      if(series&&!bySeries.has(series))bySeries.set(series,c);
+      if(title&&!byTitle.has(title))byTitle.set(title,c);
+      const legacy=String(c?.sagaId??'').trim();
+      if(legacy){
+        if(!byLegacyId.has(legacy))byLegacyId.set(legacy,new Map());
+        byLegacyId.get(legacy).set(socialSagaIdentity(c.name),c);
+      }
+    }
+    SOCIAL_CATALOG_LOOKUP={bySeries,byTitle,byLegacyId};
+  }
+  function socialCatalogEntry(name){
+    ensureSocialCatalogLookup();
+    const k=seriesKey(name);
+    return SOCIAL_CATALOG_LOOKUP.bySeries.get(k)||SOCIAL_CATALOG_LOOKUP.byTitle.get(coverNorm(name))||null;
+  }
   // Identidad Social independiente de sagaId. El catálogo histórico contiene
   // colisiones de sagaId, por lo que Global/Amigos usan una identidad estable
   // derivada de la serie y no del ID histórico.
   let SOCIAL_SAGA_INDEX=null;
   let SOCIAL_SAGA_INDEX_SIGNATURE='';
+  const SOCIAL_STABLE_HASH_CACHE=new Map();
   function socialStableHash(value){
     const str=String(value||'');
+    const cached=SOCIAL_STABLE_HASH_CACHE.get(str);if(cached)return cached;
     let h=1469598103934665603n;
     const prime=1099511628211n;
     for(let i=0;i<str.length;i++){h^=BigInt(str.charCodeAt(i));h=BigInt.asUintN(64,h*prime);}
-    return 's:'+h.toString(16).padStart(16,'0');
+    const id='s:'+h.toString(16).padStart(16,'0');
+    if(SOCIAL_STABLE_HASH_CACHE.size>10000)SOCIAL_STABLE_HASH_CACHE.clear();
+    SOCIAL_STABLE_HASH_CACHE.set(str,id);
+    return id;
   }
   function socialSagaIdentity(name){
     try{return String(seriesKey(name)||seasonBaseKey(name)||coverNorm(name)||name).trim();}
@@ -8033,13 +8064,12 @@ $('mirAuthTabLogin')?.addEventListener('click',()=>setMode('login'));$('mirAuthT
     }
   }
   function socialCatalogEntryBySagaId(id){
-    ensureSocialSagaIndex();const v=String(id||'').trim();if(!v)return null;
+    ensureSocialSagaIndex();ensureSocialCatalogLookup();
+    const v=String(id||'').trim();if(!v)return null;
     const direct=SOCIAL_SAGA_INDEX.get(v);if(direct)return direct;
-    // Compatibilidad de lectura con IDs numéricos antiguos: solo se aceptan
-    // cuando apuntan inequívocamente a una única serie. Nunca se escriben de nuevo.
-    const matches=new Map();
-    for(const c of (CATALOG||[])){if(String(c?.sagaId??'').trim()!==v)continue;const key=socialSagaIdentity(c.name);matches.set(key,c)}
-    return matches.size===1?[...matches.values()][0]:null;
+    // Compatibilidad con IDs numéricos antiguos; el índice conserva la validación de unicidad.
+    const matches=SOCIAL_CATALOG_LOOKUP.byLegacyId.get(v);
+    return matches?.size===1?[...matches.values()][0]||null:null;
   }
   function socialSagaId(name){const c=socialCatalogEntry(name);return c?socialStableHash(socialSagaIdentity(c.name)):null}
   function socialNormalizeSagaId(id){const v=String(id||'').trim();if(!v)return null;ensureSocialSagaIndex();if(v.startsWith('s:'))return SOCIAL_SAGA_INDEX.has(v)?v:null;const c=socialCatalogEntryBySagaId(v);return c?socialSagaId(c.name):null}
@@ -8146,6 +8176,7 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
     }
     return {rows,names};
   }
+  let socialScoresSyncedUid='',socialScoresSyncedSignature='';
   async function socialSyncScores(){
     if(!sb||!session?.user)return {ok:false,error:new Error('No hay sesión de Supabase activa.')};
     const uid=session.user.id;
@@ -8155,6 +8186,8 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
     if(!local.rows.length)return {ok:false,error:new Error('No se encontraron puntuaciones válidas en el ranking local.')};
     const now=new Date().toISOString();
     const rows=local.rows.map(x=>({saga_id:x.saga_id,score:x.score,year:x.year,quarter:x.quarter,user_id:uid,updated_at:now}));
+    const signature=JSON.stringify(rows.map(x=>[x.saga_id,x.score,x.year,x.quarter]));
+    if(socialScoresSyncedUid===uid&&socialScoresSyncedSignature===signature)return {ok:true,rows:rows.length,skipped:true};
     const r=await sb.from(SOCIAL_TABLES.scores).upsert(rows,{onConflict:'user_id,saga_id'});
     if(r.error){
       console.error('MiRanking social scores UPSERT',r.error);
@@ -8174,6 +8207,7 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
         return {ok:false,error:rr.error,stage:'delete',rows:rows.length};
       }
     }
+    socialScoresSyncedUid=uid;socialScoresSyncedSignature=signature;
     return {ok:true,rows:rows.length};
   }
   function socialAvatar(p,cls='social-avatar'){const n=String(p?.display_name||p?.username||'Usuario');return `<div class="${cls}">${p?.avatar?`<img src="${socialEsc(p.avatar)}" alt="">`:socialEsc(n.charAt(0).toUpperCase())}</div>`}
