@@ -1220,6 +1220,13 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 #coverViewer img{display:block;max-width:calc(100vw - 40px);max-height:calc(100vh - 40px);width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 18px 70px rgba(0,0,0,.75);cursor:pointer;user-select:none;-webkit-user-drag:none;}
 body.cover-viewer-open{overflow:hidden;}
 @media(max-width:760px){#coverViewer{padding:10px;}#coverViewer img{max-width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:8px;}}
+
+.random-card .mr-catalog-title-tags{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle}
+.random-card .mr-catalog-title-tag{display:inline-flex;align-items:center;border:1px solid;border-radius:7px;padding:2px 7px;font-size:11px;font-weight:750;line-height:1.35;white-space:nowrap}
+.random-card .mr-release-kind-season{border-color:rgba(103,174,255,.55);background:rgba(56,126,204,.2);color:#b9dcff}
+.random-card .mr-release-kind-spinoff{border-color:rgba(189,143,255,.58);background:rgba(126,78,191,.22);color:#dec6ff}
+.random-card .mr-release-kind-ova{border-color:rgba(255,176,98,.6);background:rgba(207,113,44,.22);color:#ffd2a5}
+
 </style>
 <style id="miranking-social-badges-fix">
 .mr121-badge-row{display:inline-flex;align-items:center;gap:4px;vertical-align:middle;margin-left:6px}
@@ -7325,6 +7332,26 @@ showSagaMode();
       const old=document.getElementById(id);if(!old)continue;const val=old.value;const n=old.cloneNode(false);n.innerHTML='';n.appendChild(new Option(placeholder,''));for(const v of opts)n.appendChild(new Option(v,v));n.value=opts.includes(val)?val:'';old.replaceWith(n);
     }
   }
+  function randomReleaseTag(x){
+    // Aleatorio muestra la misma etiqueta de tipo/lanzamiento que Puntuar.
+    // Como aquí cada tarjeta representa una saga, se toma su temporada
+    // principal más antigua; las sagas compuestas solo por spin-offs/OVAs
+    // conservan el tipo de lanzamiento que corresponda.
+    const entries=Array.isArray(x?.entries)?x.entries:(Array.isArray(CATALOG)?CATALOG.filter(e=>
+      (x?.sagaId && String(e?.sagaId||'')===String(x.sagaId)) ||
+      (!x?.sagaId && seriesKey(e?.name)===seriesKey(x?.name))
+    ):[]);
+    if(!entries.length)return null;
+    const ordered=[...entries].sort((a,b)=>compareCatalogReleaseOrder(a,b));
+    const release=ordered.find(e=>catalogEntryReleaseKind(e)==='season')||ordered[0];
+    return {kind:catalogEntryReleaseKind(release),label:catalogEntryReleaseLabel(release)};
+  }
+  function addRandomReleaseTag(card,x){
+    const tagInfo=randomReleaseTag(x);if(!tagInfo)return;
+    const title=card.querySelector('.ctitle');if(!title)return;
+    const tag=document.createElement('span');tag.className=`mr-catalog-title-tag mr-release-kind-${tagInfo.kind}`;tag.textContent=tagInfo.label;
+    const wrap=document.createElement('span');wrap.className='mr-catalog-title-tags';wrap.appendChild(tag);title.appendChild(wrap);
+  }
   function randomFilteredPool(){
     const g=document.getElementById('randomGenre')?.value||'',y=document.getElementById('randomYear')?.value||'',q=document.getElementById('randomQuarter')?.value||'';
     return randomEligibleCatalog().filter(x=>
@@ -7366,7 +7393,7 @@ showSagaMode();
       if(!x||!pool.some(y=>(y.seriesKey||seriesKey(y.name))===(x.seriesKey||seriesKey(x.name)))){randomSlots[i]=null;continue;}
       const c=document.createElement('div');c.className='random-card';
       c.innerHTML='<img alt=""><div class="ctitle"></div><div class="random-actions"><button class="primary score-random">Puntuar</button><button class="pass-random">➡️ Pasar</button></div>';
-      c.querySelector('.ctitle').textContent=x.name;makeCover(c.querySelector('img'),x.name);
+      c.querySelector('.ctitle').textContent=x.name;addRandomReleaseTag(c,x);makeCover(c.querySelector('img'),x.name);
       c.querySelector('.score-random').addEventListener('click',()=>mrIntegratedOpenScore({...x,source:'random'},'random'));
       c.querySelector('img').addEventListener('click',()=>mrIntegratedOpenScore({...x,source:'random'},'random'));
       c.querySelector('.pass-random').addEventListener('click',()=>replaceRandomSlot(i));list.appendChild(c);
