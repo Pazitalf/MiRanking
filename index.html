@@ -3017,7 +3017,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json', { cache: 'force-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261020', { cache: 'force-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
@@ -4544,17 +4544,93 @@ function invalidateScoredCaches(){
   newCatalogGlobalRank=null;
   catalogDataVersion++;
 }
+function catalogEntryAirDate(entry){
+  const raw=entry?.startDate??entry?.releaseDate??entry?.firstAired;
+  if(raw&&typeof raw==='object'){
+    const year=Number(raw.year)||0,month=Number(raw.month)||0,day=Number(raw.day)||0;
+    return year?{year,month:month>=1&&month<=12?month:0,day:day>=1&&day<=31?day:0}:null;
+  }
+  if(typeof raw==='string'){
+    const m=raw.trim().match(/^(\d{4})(?:[-/.](\d{1,2})(?:[-/.](\d{1,2}))?)?/);
+    if(m)return {year:Number(m[1])||0,month:Number(m[2])||0,day:Number(m[3])||0};
+  }
+  if(Number.isFinite(Number(raw))&&Number(raw)>9999){
+    const digits=String(Math.trunc(Number(raw))).padStart(8,'0');
+    return {year:Number(digits.slice(0,4))||0,month:Number(digits.slice(4,6))||0,day:Number(digits.slice(6,8))||0};
+  }
+  return null;
+}
+function catalogEntryYear(entry){
+  return catalogEntryAirDate(entry)?.year||Number(entry?.year)||0;
+}
+function catalogEntryQuarter(entry){
+  const month=catalogEntryAirDate(entry)?.month||0;
+  if(month)return Math.ceil(month/3);
+  const m=String(entry?.quarter||'').match(/([1-4])/);
+  return m?Number(m[1]):0;
+}
+function catalogEntryReleaseKind(entry){
+  const category=String(entry?.category||'').trim().toLowerCase();
+  const normalized=`${category} ${entry?.releaseType||''} ${entry?.format||''} ${entry?.type||''} ${entry?.name||''}`.toLowerCase();
+  if(/\bova\b/.test(normalized))return 'ova';
+  if(/spin[\s-]*off/.test(category))return 'spinoff';
+  return 'season';
+}
+function catalogEntryReleaseOrder(entry){
+  const d=catalogEntryAirDate(entry);
+  return d?.year?Date.UTC(d.year,(d.month||1)-1,d.day||1):Number.POSITIVE_INFINITY;
+}
+function compareCatalogReleaseOrder(a,b){
+  const da=catalogEntryReleaseOrder(a),db=catalogEntryReleaseOrder(b);
+  if(da!==db)return da-db;
+  const na=Number((String(a?.season||'').match(/(\d+)/)||[])[1])||0;
+  const nb=Number((String(b?.season||'').match(/(\d+)/)||[])[1])||0;
+  if(na!==nb)return na-nb;
+  return String(a?.name||'').localeCompare(String(b?.name||''),'es',{sensitivity:'base'});
+}
+function catalogEntryDateLabel(entry){
+  const date=catalogEntryAirDate(entry);
+  if(date?.year&&date.month&&date.day)return `${String(date.day).padStart(2,'0')}/${String(date.month).padStart(2,'0')}/${date.year}`;
+  if(date?.year&&date.month)return `${String(date.month).padStart(2,'0')}/${date.year}`;
+  if(date?.year)return String(date.year);
+  const year=Number(entry?.year)||0;
+  return year?`${entry.quarter?`${entry.quarter} · `:''}${year} · fecha exacta pendiente`:'Fecha exacta pendiente';
+}
+function catalogEntryReleaseLabel(entry){
+  const curated=String(entry?.releaseLabel||'').trim();
+  if(curated)return curated;
+  const title=String(entry?.name||'');
+  const normalized=`${entry?.releaseType||''} ${entry?.format||''} ${entry?.type||''} ${title}`.toLowerCase();
+  if(/\bova\b/.test(normalized))return 'OVA';
+  if(/\boad\b/.test(normalized))return 'OAD';
+  if(/\bona\b/.test(normalized))return 'ONA';
+  if(/\b(movie|film|pel[ií]cula)\b/.test(normalized))return 'Película';
+  if(/\b(special|especial)\b/.test(normalized))return 'Especial';
+  if(catalogEntryReleaseKind(entry)==='spinoff')return 'Spin-off';
+  const namedSeason=title.match(/\b(\d+)(?:st|nd|rd|th)\s+season\b|\b(?:season|temporada)\s*(\d+)\b/i);
+  const internalSeason=String(entry?.season||'').match(/(\d+)/);
+  const number=Number(namedSeason?.[1]||namedSeason?.[2]||internalSeason?.[1]);
+  const part=title.match(/\b(?:part|parte)\s*(\d+)\b/i);
+  return number?`Temp. ${number}${part?` · Parte ${part[1]}`:''}`:(entry?.season||'Temporada');
+}
 function filteredNew(){
   const q=document.getElementById('newSearch').value.trim().toLowerCase();
   const g=document.getElementById('genreFilter').value;
   const y=document.getElementById('yearFilter').value;
   const qt=document.getElementById('quarterFilter').value;
-  let arr=getNewCatalogOrdered().filter(x=>{
+  const hasDateFilter=Boolean(y||qt);
+  let arr=getNewCatalogOrdered().map(x=>{
+    const matchingReleases=(x.entries||[]).filter(entry=>{
+      const entryYear=catalogEntryYear(entry);
+      const entryQuarter=catalogEntryQuarter(entry);
+      return (!y||String(entryYear)===String(y))&&(!qt||entryQuarter===Number(String(qt).match(/[1-4]/)?.[0]||0));
+    }).sort(compareCatalogReleaseOrder);
+    return {...x,matchingReleases:hasDateFilter?matchingReleases:[]};
+  }).filter(x=>{
     const textMatches=!q || x.searchText.includes(q);
     const genreMatches=!g || (x.genres||[]).some(z=>genreLabel(z)===genreLabel(g));
-    const yearMatches=!y || x.yearsSet.has(y);
-    const quarterMatches=!qt || x.quartersSet.has(qt);
-    return textMatches && genreMatches && yearMatches && quarterMatches;
+    const dateMatches=!hasDateFilter||(x.matchingReleases||[]).length>0;
+    return textMatches && genreMatches && dateMatches;
   });
   const sort=getNewSort();
   if(sort==='global-desc')arr=sortNewByGlobal(arr,true);
@@ -4576,8 +4652,20 @@ function renderNewList(resetPage=true){
   for(const x of arr.slice(0,end)){
     const b=document.createElement('button');
     b.className='catalog-item';
-    b.innerHTML=`<img alt=""><div><div class="ctitle"></div><div class="cmeta"></div></div>`;
+    b.innerHTML=`<img alt=""><div><div class="ctitle"></div><div class="mr-catalog-release-list" hidden></div><div class="cmeta"></div></div>`;
     b.querySelector('.ctitle').textContent=x.name;
+    const cardCoverName=x.matchingReleases?.[0]?.name||x.name;
+    b.querySelector('img').alt='Portada de '+cardCoverName;
+    const releaseList=b.querySelector('.mr-catalog-release-list');
+    for(const release of (x.matchingReleases||[]).slice(0,4)){
+      const chip=document.createElement('span');chip.className=`mr-catalog-release-chip mr-release-kind-${catalogEntryReleaseKind(release)}`;
+      const label=document.createElement('b');label.textContent=catalogEntryReleaseLabel(release);
+      chip.append(label);releaseList.appendChild(chip);
+    }
+    if((x.matchingReleases||[]).length>4){
+      const more=document.createElement('span');more.className='mr-catalog-release-more';more.textContent=`+${x.matchingReleases.length-4}`;releaseList.appendChild(more);
+    }
+    releaseList.hidden=!releaseList.childElementCount;
     const seasonCount=(x.entries||[]).length;
     const yearLabel=(x.years||[]).length
       ? String(Math.min(...x.years))
@@ -4588,7 +4676,7 @@ function renderNewList(resetPage=true){
     meta.querySelector('.anime-meta-genres').textContent=genreText;
     meta.querySelector('.anime-meta-year').textContent=yearLabel;
     meta.querySelector('.anime-meta-seasons').textContent=seasonCount===1?'1 temporada':`${seasonCount} temporadas`;
-    getImage(x.name,b.querySelector('img'));
+    getImage(cardCoverName,b.querySelector('img'));
     b.addEventListener('click',()=>window.openScore(x,'new'));
     frag.appendChild(b);
   }
@@ -5319,6 +5407,21 @@ document.getElementById('exportTop50Pdf')?.addEventListener('click',()=>{
 #newListView .search-field .filter-label::before{content:"Buscar anime";font-size:12px!important;letter-spacing:.02em}
 #newList .catalog-item .ctitle{font-size:15px!important;font-weight:850!important;line-height:1.3!important;color:#f1f7f8!important;letter-spacing:.005em}
 #newList .catalog-item .cmeta{margin-top:8px}
+#newList .mr-catalog-release-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+#newList .mr-catalog-release-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:4px 8px;border:1px solid rgba(73,214,177,.34);border-radius:7px;background:rgba(73,214,177,.09);color:#c6f2e7;font-size:10px;line-height:1.25}
+#newList .mr-catalog-release-chip b{font-size:10px;font-weight:850;white-space:nowrap}
+#newList .mr-catalog-release-chip small{color:#9bb6b4;font-size:9px;overflow-wrap:anywhere}
+#newList .mr-catalog-release-chip.mr-release-kind-season{border-color:rgba(103,174,255,.48);background:rgba(56,126,204,.16);color:#b9dcff}
+#newList .mr-catalog-release-chip.mr-release-kind-spinoff{border-color:rgba(189,143,255,.5);background:rgba(126,78,191,.18);color:#dec6ff}
+#newList .mr-catalog-release-chip.mr-release-kind-ova{border-color:rgba(255,176,98,.52);background:rgba(207,113,44,.18);color:#ffd2a5}
+#scoreModal .season-picker-entry{display:flex!important;align-items:center!important;gap:9px;flex:1;min-width:0;overflow:visible!important;white-space:normal!important}
+#scoreModal .season-picker-cover{width:36px;height:50px;flex:0 0 auto;object-fit:cover;border:1px solid rgba(136,167,187,.34);border-radius:6px;background:#0b151c;cursor:zoom-in;box-shadow:0 3px 9px rgba(0,0,0,.26)}
+#scoreModal .season-picker-label{display:inline-flex!important;align-items:center;min-height:25px;padding:4px 8px;border:1px solid transparent;border-radius:7px;font-size:11px!important;font-weight:850;line-height:1.2;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+#scoreModal .season-picker-label.mr-release-kind-season{border-color:rgba(103,174,255,.45);background:rgba(56,126,204,.16);color:#b9dcff}
+#scoreModal .season-picker-label.mr-release-kind-spinoff{border-color:rgba(189,143,255,.48);background:rgba(126,78,191,.18);color:#dec6ff}
+#scoreModal .season-picker-label.mr-release-kind-ova{border-color:rgba(255,176,98,.5);background:rgba(207,113,44,.18);color:#ffd2a5}
+#scoreModal .season-picker-count{color:#9bb6b4;font-size:10px!important;white-space:nowrap}
+#newList .mr-catalog-release-more{align-self:center;color:#9bb6b4;font-size:10px;font-weight:800}
 #newRecommendationsView .mr120-rec-card{align-items:flex-start}
 #newRecommendationsView .mr120-rec-card h4{font-size:16px!important;font-weight:850!important;line-height:1.3!important;color:#f3f8fa!important;margin:0 0 8px!important}
 #newRecommendationsView .mr120-rec-meta{display:grid;gap:5px;margin:6px 0 8px}
@@ -5968,7 +6071,7 @@ function hydrateRankingFromDetails(){
     if(!d?.seasons?.length) continue;
     let calc=null;
     try{
-      const rated=d.seasons.map(effectiveSeasonScore).filter(hasValidScore).map(Number);
+      const rated=sagaAverageSeasonList(d.seasons).map(effectiveSeasonScore).filter(hasValidScore).map(Number);
       calc=rated.length===1 ? rated[0] : exponentialWeightedAverage(rated,10);
     }catch(e){calc=null;}
     if(calc==null) continue;
@@ -6005,6 +6108,7 @@ function finishDetailScoring(){
 // render puede ejecutarse antes de llegar físicamente a este bloque del script.
 var CATALOG_SEASON_CACHE;
 var CATALOG_TITLE_SEASON_CACHE;
+var CATALOG_SEASON_ENTRY_BY_ID;
 var CATALOG_SEASONS_RESULT_CACHE;
 var CATALOG_SEASON_CACHE_SIGNATURE='';
 function ensureCatalogSeasonCaches(){
@@ -6016,8 +6120,10 @@ function ensureCatalogSeasonCaches(){
   CATALOG_SEASON_CACHE_SIGNATURE=sig;
   CATALOG_SEASON_CACHE=new Map();
   CATALOG_TITLE_SEASON_CACHE=new Map();
+  CATALOG_SEASON_ENTRY_BY_ID=new Map();
   CATALOG_SEASONS_RESULT_CACHE=new Map();
   for(const item of (CATALOG||[])){
+    if(item.seasonId)CATALOG_SEASON_ENTRY_BY_ID.set(String(item.seasonId),item);
     const keys=new Set();
     const k=seriesKey(item.name);
     if(k)keys.add(k);
@@ -6040,6 +6146,23 @@ function ensureCatalogSeasonCaches(){
       if(!arr.includes(item))arr.push(item);
     }
   }
+}
+function catalogEntryForDetailSeason(season){
+  if(!CATALOG_SEASON_ENTRY_BY_ID)ensureCatalogSeasonCaches();
+  const sid=String(season?.seasonId||season?.id||'');
+  return sid?CATALOG_SEASON_ENTRY_BY_ID.get(sid)||null:null;
+}
+function seasonExcludedFromSagaAverage(season){
+  const entry=catalogEntryForDetailSeason(season);
+  const kind=catalogEntryReleaseKind(entry||season||{});
+  return kind==='spinoff'||kind==='ova';
+}
+function sagaAverageSeasonList(seasons){
+  const all=Array.isArray(seasons)?seasons:[];
+  const mainReleases=all.filter(season=>!seasonExcludedFromSagaAverage(season));
+  // Si la obra es en sí misma un spin-off o una OVA independiente, su nota
+  // sigue pudiendo formar su propio puntaje; no se mezcla con otra saga.
+  return mainReleases.length?mainReleases:all;
 }
 function catalogSeasonsFor(name){
   // Construimos la relación de temporadas por identidad de SERIE y por clave
@@ -6081,27 +6204,14 @@ function catalogSeasonsFor(name){
   // Temporada 1, 2, 3... para esa obra.
   const malformed=arr.some(x=>/^temporada\s+\d{3,}$/i.test(String(x.season||'').trim()));
   if(malformed){
-    arr.sort((a,b)=>{
-      const ya=Number(a.year)||9999,yb=Number(b.year)||9999;
-      if(ya!==yb)return ya-yb;
-      const qn=x=>Number((String(x||'').match(/([1-4])/)||[])[1])||9;
-      const qa=qn(a.quarter),qb=qn(b.quarter); if(qa!==qb)return qa-qb;
-      return String(a.name||'').localeCompare(String(b.name||''));
-    });
+    arr.sort(compareCatalogReleaseOrder);
     const result=arr.map((x,i)=>({...x,season:`Temporada ${i+1}`}));
     CATALOG_SEASONS_RESULT_CACHE.set(targetKey,result);
     return result;
   }
   // Para temporadas bien formadas, usamos el orden numérico cuando está
   // disponible y después el año/trimestre como respaldo.
-  arr.sort((a,b)=>{
-    const na=Number((String(a.season||'').match(/(\d+)/)||[])[1]);
-    const nb=Number((String(b.season||'').match(/(\d+)/)||[])[1]);
-    if(Number.isFinite(na)&&Number.isFinite(nb)&&na!==nb)return na-nb;
-    const ya=Number(a.year)||9999,yb=Number(b.year)||9999;
-    if(ya!==yb)return ya-yb;
-    return String(a.name||'').localeCompare(String(b.name||''));
-  });
+  arr.sort(compareCatalogReleaseOrder);
   CATALOG_SEASONS_RESULT_CACHE.set(targetKey,arr);
   return arr;
 }
@@ -6126,6 +6236,7 @@ function getDetails(name){
     delete seasonDetails[lk];
   }
   const source=catalogSeasonsFor(name);
+  const sourceOrder=new Map(source.map((x,i)=>[String(x.seasonId||`${x.sagaId||''}-${x.season||''}`),i]));
   for(const x of source){
     if(!x.season)continue;
     const sid=x.seasonId||`${x.sagaId}-${x.season}`;
@@ -6133,7 +6244,16 @@ function getDetails(name){
     if(!s){s={id:sid,seasonId:sid,name:x.season,count:Number(x.episodes)||0,score:null,directComplete:false,episodes:{}};d.seasons.push(s)}
     else {s.name=x.season;s.count=Number(x.episodes)||0;s.id=sid;s.seasonId=sid;}
   }
-  d.seasons.sort((a,b)=>String(a.id||a.name).localeCompare(String(b.id||b.name),undefined,{numeric:true}));
+  d.seasons.sort((a,b)=>{
+    const ai=sourceOrder.get(String(a.seasonId||a.id||''));
+    const bi=sourceOrder.get(String(b.seasonId||b.id||''));
+    if(ai!=null||bi!=null){
+      if(ai==null)return 1;
+      if(bi==null)return -1;
+      if(ai!==bi)return ai-bi;
+    }
+    return String(a.id||a.name).localeCompare(String(b.id||b.name),undefined,{numeric:true});
+  });
   return d;
 }
 function hasValidScore(v){
@@ -6158,8 +6278,8 @@ function effectiveSeasonScore(season){
   return ep!=null?ep:(hasValidScore(season?.score) && Number(season.score)>0?Number(season.score):null);
 }
 function sagaCalculatedScore(name){
-  const seasons=getDetails(name).seasons||[];
-  // IMPORTANTE: una temporada sin puntuar NO participa en el puntaje de la saga.
+  const seasons=sagaAverageSeasonList(getDetails(name).seasons||[]);
+  // Una temporada sin puntuar ni un spin-off/OVA de otra saga no participan.
   // Si solo hay una temporada puntuada, esa nota pasa directamente a la saga.
   const rated=seasons.map(effectiveSeasonScore).filter(hasValidScore).map(Number);
   if(!rated.length)return null;
@@ -6173,7 +6293,7 @@ function scoreComesFromAverage(name,x){
     // así la P también aparece cuando la clave del anime fue normalizada o
     // migrada desde una versión anterior.
     const d=getDetails(name);
-    const seasons=Array.isArray(d?.seasons)?d.seasons:[];
+    const seasons=sagaAverageSeasonList(Array.isArray(d?.seasons)?d.seasons:[]);
     const rated=seasons.filter(s=>hasValidScore(effectiveSeasonScore(s))&&Number(effectiveSeasonScore(s))>0);
     const fromSeveralSeasons=rated.length>=2;
     const fromEpisodes=rated.some(s=>s?.manualScore!==true && seasonEpisodeAverage(s)!=null);
@@ -6492,6 +6612,24 @@ function showSagaMode(){
   document.getElementById('scoreValue').textContent=selectedNew?.score??'—';
   scoreButtonsRefresh();
 }
+function seasonPickerReleaseMarkup(season){
+  const entry=catalogEntryForDetailSeason(season);
+  const labelEntry=entry?{...entry,season:season?.name||entry.season}:{name:season?.name||'',season:season?.name||''};
+  const coverName=entry?.name||selectedNew?.name||season?.name||'';
+  const kind=catalogEntryReleaseKind(labelEntry);
+  const label=catalogEntryReleaseLabel(labelEntry);
+  return `<span class="season-picker-entry"><img class="season-picker-cover" data-season-cover="${escDetail(coverName)}" alt="${escDetail('Portada de '+coverName)}"><span class="season-picker-label mr-release-kind-${kind}">${escDetail(label)}</span></span>`;
+}
+function hydrateSeasonPickerCovers(box){
+  box?.querySelectorAll('[data-season-cover]').forEach(img=>{
+    const name=String(img.dataset.seasonCover||'').trim();
+    if(name)getImage(name,img);
+    img.addEventListener('click',ev=>{
+      ev.preventDefault();ev.stopPropagation();
+      if(img.dataset.status==='found')openCoverViewer(img);
+    });
+  });
+}
 function renderSeasonScoreSelector(){
   if(!selectedNew)return;
   const d=getDetails(selectedNew.name), box=document.getElementById('seasonScoreSelector');
@@ -6499,13 +6637,13 @@ function renderSeasonScoreSelector(){
   document.getElementById('sagaScoreControls').style.display='block';
   document.querySelector('#scoreModal .share')?.style.removeProperty('display');
   document.querySelector('#scoreModal .nickname-field')?.style.setProperty('display','none');
-  let h='<div class="season-score-scroll"><div class="season-picker-title">Elegí la temporada que querés puntuar</div>';
+  let h='<div class="season-score-scroll"><div class="season-picker-title">Elegí el lanzamiento que querés puntuar</div>';
   h+=d.seasons.map((s,i)=>{
     const v=pendingSeasonScores[i]; const saved=effectiveSeasonScore(s); const active=i===selectedSeasonIndex;
     const label=v!=null?v:(saved!=null?saved:'Sin puntuar');
-    return `<button type="button" class="season-picker-btn ${active?'selected':''} ${v!=null||saved!=null?'rated':''}" data-season-pick="${i}"><span>${escDetail(s.name)}</span><b>${label}</b></button>`;
+    return `<button type="button" class="season-picker-btn ${active?'selected':''} ${v!=null||saved!=null?'rated':''}" data-season-pick="${i}">${seasonPickerReleaseMarkup(s)}<b>${label}</b></button>`;
   }).join('');
-  h+='</div>'; box.innerHTML=h;
+  h+='</div>'; box.innerHTML=h; hydrateSeasonPickerCovers(box);
   box.querySelectorAll('[data-season-pick]').forEach(b=>b.addEventListener('click',()=>{
     selectedSeasonIndex=Number(b.dataset.seasonPick);
     const ss=d.seasons[selectedSeasonIndex];
@@ -6550,7 +6688,7 @@ function renderEpisodeScoreSelector(){
   d.seasons.forEach((s,i)=>{
     const active=i===selectedSeasonIndex;
     const count=Number(s.count)||0, vals=Object.keys(s.episodes||{}).map(Number), rated=vals.length;
-    h+=`<button type="button" class="season-picker-btn ${active?'selected':''} ${rated?'rated':''}" data-episode-season="${i}"><span>${escDetail(s.name)} <small>${rated}/${count}</small></span><b>${effectiveSeasonScore(s)==null?'—':Math.floor(Math.max(0,Math.min(100,Number(effectiveSeasonScore(s)))))}</b></button>`;
+    h+=`<button type="button" class="season-picker-btn ${active?'selected':''} ${rated?'rated':''}" data-episode-season="${i}">${seasonPickerReleaseMarkup(s)}<small class="season-picker-count">${rated}/${count}</small><b>${effectiveSeasonScore(s)==null?'—':Math.floor(Math.max(0,Math.min(100,Number(effectiveSeasonScore(s)))))}</b></button>`;
     if(active){
       h+='<div class="episode-score-note">Elegí el capítulo que querés puntuar:</div><div class="episode-inline-grid">';
       for(let ep=1;ep<=count;ep++){
@@ -6562,7 +6700,7 @@ function renderEpisodeScoreSelector(){
       h+='</div>';
     }
   });
-  h+='</div>'; box.innerHTML=h;
+  h+='</div>'; box.innerHTML=h; hydrateSeasonPickerCovers(box);
   box.querySelectorAll('[data-episode-season]').forEach(b=>b.addEventListener('click',()=>{
     selectedSeasonIndex=Number(b.dataset.episodeSeason); selectedEpisode=null; renderEpisodeScoreSelector();
   }));
