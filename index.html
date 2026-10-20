@@ -8315,7 +8315,7 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
     return true;
   };
   function socialLocalScoreRows(){
-    const source=Array.isArray(data)?data:[];const rows=[];const names=new Map();
+    const source=Array.isArray(data)?data:[];const rows=[];const names=new Map();const seenSagaIds=new Set();
     for(const x of source){
       const name=String(x?.name||'').trim();if(!name)continue;
       let score=Number(x?.score);
@@ -8331,7 +8331,11 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
       // sintéticas como series:... a social_scores.
       if(!c?.sagaId)continue;
       const key=socialSagaId(name);
-      if(!key)continue;
+      if(!key||seenSagaIds.has(key))continue;
+      // Una serie puede aparecer más de una vez en rankings antiguos por sus
+      // títulos alternativos. La tabla social tiene una sola fila por saga;
+      // conservamos la primera puntuación válida, igual que socialOwnScoreForSaga.
+      seenSagaIds.add(key);
       if(!names.has(key))names.set(key,name);
       // Supabase espera year/quarter como INTEGER. El catálogo histórico de
       // MiRanking guarda el trimestre como texto (ej. "1er trimestre") y
