@@ -2422,8 +2422,166 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   #mirAccountCard #mirCancelPasswordBtn{width:100%!important}
 }
 </style>
+<style id="mr-startup-intro-styles">
+#mrStartupIntro{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,rgba(90,224,189,.10),transparent 27%),#080d17;opacity:1;visibility:visible;pointer-events:none;animation:mrStartupIntroFade .30s ease .96s forwards}
+#mrStartupIntro .mr-startup-brand{display:flex;align-items:center;gap:15px;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+#mrStartupIntro .mr-startup-mark{position:relative;display:grid;place-items:center;width:64px;height:64px;border:1px solid rgba(160,255,232,.52);border-radius:18px;background:linear-gradient(145deg,#5ae0bd,#1aa985);color:#07241c;font-size:21px;font-weight:1000;letter-spacing:-1px;box-shadow:0 10px 34px rgba(73,214,177,.22),inset 0 1px 0 rgba(255,255,255,.35);opacity:0;transform:translateY(8px) scale(.68) rotate(-15deg);animation:mrStartupMarkIn .62s cubic-bezier(.2,.9,.3,1.25) forwards}
+#mrStartupIntro .mr-startup-mark:after{content:"";position:absolute;inset:-8px;border:1px solid rgba(90,224,189,.38);border-radius:23px;opacity:0;transform:scale(.78);animation:mrStartupRing .72s ease .20s forwards}
+#mrStartupIntro .mr-startup-word{color:#f3fbf8;font-size:32px;font-weight:950;letter-spacing:.13em;opacity:0;transform:translateX(-10px);animation:mrStartupWordIn .52s ease .30s forwards}
+@keyframes mrStartupMarkIn{65%{opacity:1;transform:translateY(-2px) scale(1.06) rotate(1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(-4deg)}}
+@keyframes mrStartupRing{35%{opacity:1}100%{opacity:0;transform:scale(1.16)}}
+@keyframes mrStartupWordIn{to{opacity:1;transform:translateX(0)}}
+@keyframes mrStartupIntroFade{to{opacity:0;visibility:hidden}}
+@media(max-width:520px){#mrStartupIntro .mr-startup-brand{gap:12px}#mrStartupIntro .mr-startup-mark{width:56px;height:56px;border-radius:16px;font-size:19px}#mrStartupIntro .mr-startup-word{font-size:25px;letter-spacing:.11em}}
+@media(prefers-reduced-motion:reduce){#mrStartupIntro{display:none!important}}
+</style>
+<style id="mr-welcome-tour-styles">
+#mrWelcomeTour{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(4,9,16,.80);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#mrWelcomeTour.open{display:flex}
+#mrWelcomeTour .mr-welcome-card{position:relative;width:min(680px,100%);max-height:calc(100dvh - 28px);overflow:auto;padding:24px;border:1px solid rgba(90,224,189,.30);border-radius:20px;background:linear-gradient(145deg,#14212b,#0b121b 76%);box-shadow:0 28px 90px rgba(0,0,0,.62);color:#f3fbf8}
+#mrWelcomeTour .mr-welcome-close-icon{position:absolute;top:12px;right:12px;width:34px;height:34px;min-height:34px;padding:0;border:1px solid #344651;border-radius:10px;background:#101a21;color:#c7d8d3;font-size:20px;line-height:1}
+#mrWelcomeTour .mr-welcome-eyebrow{margin:0 40px 7px 0;color:#5ae0bd;font-size:10px;font-weight:950;letter-spacing:.16em}
+#mrWelcomeTour h2{margin:0 40px 6px 0;color:#f3fbf8;font-size:clamp(21px,4vw,28px);line-height:1.15}
+#mrWelcomeTour .mr-welcome-intro{margin:0 0 16px;color:#aab8c2;font-size:13px;line-height:1.45}
+#mrWelcomeTour .mr-welcome-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#mrWelcomeTour .mr-welcome-feature{display:flex;align-items:flex-start;gap:10px;min-width:0;padding:11px;border:1px solid rgba(110,142,157,.23);border-radius:12px;background:rgba(22,34,43,.78)}
+#mrWelcomeTour .mr-welcome-number{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border:1px solid rgba(90,224,189,.34);border-radius:8px;background:rgba(90,224,189,.09);color:#5ae0bd;font-size:10px;font-weight:950}
+#mrWelcomeTour .mr-welcome-feature h3{margin:1px 0 3px;color:#edf7f4;font-size:12px;font-weight:900}
+#mrWelcomeTour .mr-welcome-feature p{margin:0;color:#9aabb4;font-size:11px;line-height:1.4}
+#mrWelcomeTour .mr-welcome-note{margin:12px 0 0;padding:10px 12px;border-left:2px solid #36c6a2;border-radius:0 8px 8px 0;background:rgba(39,161,131,.08);color:#b9cbc6;font-size:11px;line-height:1.45}
+#mrWelcomeTour .mr-welcome-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+#mrWelcomeTour .mr-welcome-actions button{min-height:40px;padding:8px 13px;border-radius:10px;font-size:12px;font-weight:900}
+#mrWelcomeTour .mr-welcome-dismiss{border:1px solid #3a4a52;background:#111b22;color:#c7d8d3}
+#mrWelcomeTour .mr-welcome-start{border:1px solid #5ae0bd;background:linear-gradient(145deg,#5ae0bd,#1aa985);color:#07241c}
+#mrWelcomeTour button:focus-visible{outline:2px solid #8cf4d8;outline-offset:2px}
+@media(max-width:560px){#mrWelcomeTour{padding:9px}#mrWelcomeTour .mr-welcome-card{padding:18px 15px;max-height:calc(100dvh - 18px);border-radius:16px}#mrWelcomeTour .mr-welcome-grid{grid-template-columns:1fr;gap:6px}#mrWelcomeTour .mr-welcome-feature{padding:9px}#mrWelcomeTour .mr-welcome-intro{margin-bottom:11px}#mrWelcomeTour .mr-welcome-note{margin-top:9px}#mrWelcomeTour .mr-welcome-actions{margin-top:11px}}
+@media(max-height:520px){#mrWelcomeTour .mr-welcome-card{padding-top:15px;padding-bottom:15px}#mrWelcomeTour .mr-welcome-feature{padding-top:7px;padding-bottom:7px}}
+@media(prefers-reduced-motion:reduce){#mrWelcomeTour{backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+<style id="mr-start-tutorial-polish-v1">
+/* Inicio de puntuación: una tarjeta más clara, cálida y alineada con el acento verde agua. */
+#startTutorial.modal{
+  padding:20px;
+  background:radial-gradient(ellipse at 50% 40%,rgba(73,214,177,.09),transparent 48%),rgba(4,9,15,.86);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+#startTutorial .tutorial-card{
+  position:relative;
+  width:min(650px,100%);
+  max-height:min(90dvh,740px);
+  overflow:auto;
+  padding:24px 26px 22px;
+  border:1px solid rgba(73,214,177,.24);
+  border-radius:22px;
+  background:radial-gradient(circle at 100% 0%,rgba(73,214,177,.08),transparent 34%),linear-gradient(145deg,#16232d 0%,#101a24 58%,#101c25 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.025) inset,0 0 52px rgba(73,214,177,.07);
+  animation:mr-start-tutorial-in .24s cubic-bezier(.2,.75,.25,1) both;
+}
+#startTutorial .tutorial-card::before{
+  content:"";position:absolute;top:0;left:24px;right:24px;height:2px;border-radius:99px;
+  background:linear-gradient(90deg,transparent,rgba(73,214,177,.85),rgba(94,167,255,.5),transparent);
+}
+#startTutorial .modal-head{
+  align-items:center;margin:0 0 19px;padding:0 0 14px;
+  border-bottom:1px solid rgba(151,181,188,.13);
+}
+#startTutorial .modal-head h2{font-size:19px;font-weight:850;letter-spacing:-.035em;color:#eff8f6}
+#startTutorial #closeTutorial{
+  width:40px;height:40px;min-height:40px;flex:0 0 40px;padding:0;border-radius:12px;
+  color:#a8bbb9;background:rgba(255,255,255,.035);border-color:rgba(151,181,188,.16);
+  transition:background .16s,border-color .16s,color .16s,transform .16s;
+}
+#startTutorial #closeTutorial:hover{color:#fff;background:rgba(73,214,177,.1);border-color:rgba(73,214,177,.42);transform:rotate(3deg)}
+#startTutorial .tutorial-step{padding:1px 0 0}
+#startTutorial .tutorial-badge{
+  padding:6px 10px;border:1px solid rgba(73,214,177,.2);border-radius:999px;
+  background:rgba(73,214,177,.09);color:#83e8cc;font-size:10px;letter-spacing:.11em;
+}
+#startTutorial .tutorial-step h3{margin:13px 0 6px;font-size:clamp(23px,3vw,27px);line-height:1.15;letter-spacing:-.04em;color:#f3f8f7}
+#startTutorial .tutorial-step p{margin:0 0 16px;color:#a7b8bd;font-size:14px;line-height:1.55}
+#startTutorial .tutorial-search-wrap{
+  min-height:56px;margin:0;padding:0 15px;gap:11px;border:1px solid #30444c;border-radius:15px;
+  background:rgba(7,16,22,.62);color:#95b6b4;transition:border-color .18s,box-shadow .18s,background .18s;
+}
+#startTutorial .tutorial-search-wrap:focus-within{
+  border-color:rgba(73,214,177,.72);background:rgba(8,20,24,.92);
+  box-shadow:0 0 0 3px rgba(73,214,177,.12),0 8px 24px rgba(0,0,0,.16);
+}
+#startTutorial .tutorial-search-wrap>span{font-size:16px;line-height:1;opacity:.9}
+#startTutorial .tutorial-search-wrap input{
+  width:100%;min-width:0;min-height:54px;flex:1;padding:10px 0;border:0;border-radius:0;
+  outline:0!important;box-shadow:none!important;background:transparent;color:#f3f8f7;font-size:15px;
+}
+#startTutorial .tutorial-search-wrap input::placeholder{color:#748a91;opacity:1}
+#startTutorial .tutorial-results{gap:7px;max-height:224px;margin-top:9px;padding-right:2px;scrollbar-width:thin;scrollbar-color:#38524f transparent}
+#startTutorial .tutorial-result{
+  grid-template-columns:48px minmax(0,1fr) auto;gap:11px;padding:8px 10px;border-color:rgba(144,174,179,.15);
+  border-radius:13px;background:linear-gradient(110deg,rgba(25,40,48,.95),rgba(19,31,40,.95));
+  transition:transform .16s,border-color .16s,background .16s,box-shadow .16s;
+}
+#startTutorial .tutorial-result:hover,#startTutorial .tutorial-result:focus-visible{
+  border-color:rgba(73,214,177,.48);background:linear-gradient(110deg,rgba(28,55,53,.95),rgba(19,37,43,.95));
+  box-shadow:0 6px 18px rgba(0,0,0,.2);transform:translateY(-1px);outline:none;
+}
+#startTutorial .tutorial-result img{width:48px;height:64px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#0b1319}
+#startTutorial .tutorial-result-name{font-size:13px;line-height:1.35;color:#edf7f5}
+#startTutorial .tutorial-result-meta{font-size:11px;color:#91a9aa;line-height:1.4}
+#startTutorial .tutorial-result-arrow{color:#74d9bd}
+#startTutorial .tutorial-empty{
+  min-height:50px;display:grid;place-items:center;padding:11px 14px;border:1px dashed rgba(128,162,166,.2);
+  border-radius:12px;background:rgba(255,255,255,.018);color:#91a6aa;font-size:12px;line-height:1.4;
+}
+#startTutorial .tutorial-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:15px}
+#startTutorial .tutorial-option{
+  min-width:0;min-height:74px;display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:11px 12px;border:1px solid rgba(137,169,174,.16);border-radius:13px;
+  background:linear-gradient(145deg,rgba(28,43,51,.8),rgba(19,31,39,.86));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .16s,transform .16s,background .16s;
+}
+#startTutorial .tutorial-option:hover{transform:translateY(-2px);border-color:rgba(73,214,177,.34);background:linear-gradient(145deg,rgba(29,54,52,.8),rgba(19,34,41,.9))}
+#startTutorial .tutorial-option b{font-size:12px;color:#eaf5f2;line-height:1.25}
+#startTutorial .tutorial-option span{font-size:10px;line-height:1.4;color:#91a5a9}
+#startTutorial .tutorial-tip{
+  margin-top:11px;padding:10px 12px;border:1px solid rgba(73,214,177,.1);border-radius:12px;
+  background:linear-gradient(90deg,rgba(73,214,177,.07),rgba(94,167,255,.035));color:#9db3b3;font-size:11px;line-height:1.45;
+}
+#startTutorial :focus-visible{outline:2px solid #83e8cc;outline-offset:3px}
+@keyframes mr-start-tutorial-in{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:600px){
+  #startTutorial.modal{padding:10px}
+  #startTutorial .tutorial-card{max-height:calc(100dvh - 20px);padding:20px 17px 16px;border-radius:19px}
+  #startTutorial .tutorial-card::before{left:17px;right:17px}
+  #startTutorial .modal-head{margin-bottom:15px;padding-bottom:12px}
+  #startTutorial .modal-head h2{font-size:17px}
+  #startTutorial .tutorial-step h3{font-size:23px;margin-top:11px}
+  #startTutorial .tutorial-step p{font-size:13px;margin-bottom:13px}
+  #startTutorial .tutorial-options{grid-template-columns:1fr!important;gap:6px;margin-top:12px}
+  #startTutorial .tutorial-option{min-height:48px;display:grid;grid-template-columns:minmax(88px,.65fr) minmax(0,1fr);align-items:center;gap:8px;padding:8px 10px}
+  #startTutorial .tutorial-option b{font-size:11px}
+  #startTutorial .tutorial-option span{font-size:10px}
+  #startTutorial .tutorial-tip{margin-top:9px;padding:9px 10px;font-size:10px}
+  #startTutorial .tutorial-results{max-height:min(190px,25dvh)}
+}
+@media(prefers-reduced-motion:reduce){#startTutorial .tutorial-card,#startTutorial .tutorial-option,#startTutorial .tutorial-result,#startTutorial #closeTutorial{animation:none;transition:none}}
+#watchingPanel .proto-head .watching-toggle-all{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;
+  min-height:38px;padding:7px 12px;border:1px solid rgba(73,214,177,.24);border-radius:11px;
+  background:rgba(73,214,177,.08);color:#83e8cc;font-size:12px;font-weight:850;white-space:nowrap;
+  transition:background .16s,border-color .16s,transform .16s;
+}
+#watchingPanel .proto-head .watching-toggle-all::before{content:"↕";font-size:15px;line-height:1}
+#watchingPanel .proto-head .watching-toggle-all:hover{background:rgba(73,214,177,.15);border-color:rgba(73,214,177,.48);transform:translateY(-1px)}
+#watchingPanel .proto-head .watching-toggle-all:focus-visible{outline:2px solid #83e8cc;outline-offset:3px}
+/* El botón de ranking de perfiles precede al podio como en el orden del HTML. */
+.global-panel-wrap>.global-podium-toolbar{order:-1!important}
+.global-panel-wrap>#socialGlobalPodium{order:0!important}
+@media(max-width:480px){#watchingPanel .proto-head{gap:8px!important}#watchingPanel .proto-head .watching-toggle-all{min-height:35px;padding:6px 9px;font-size:11px}}
+</style>
 </head>
 <body>
+<div aria-hidden="true" id="mrStartupIntro"><div class="mr-startup-brand"><span class="mr-startup-mark">MI</span><span class="mr-startup-word">RANKING</span></div></div>
+
 <div aria-hidden="true" aria-labelledby="mirProfileTitle" aria-modal="true" id="mirProfileModal" role="dialog">
 <div class="mir-profile-card">
 <div class="mir-profile-head">
@@ -2511,11 +2669,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <button data-friends-main="opinions" id="friendsMainTabOpinions" type="button">💬 Opiniones</button>
 </div>
 <section class="social-card friends-main-view" id="friendsMainViewFollowing">
-<div class="social-section-title"><div><h3>👤 Siguiendo</h3><span class="social-section-kicker">Opiniones nuevas de las personas que seguís.</span></div></div>
+<div class="social-section-title"><div><h3>👤 Siguiendo</h3></div></div>
 <div class="social-following-list" id="socialFollowingFeed"></div>
 </section>
 <section class="social-card friends-main-view active" id="friendsMainViewFriends">
-<div class="social-section-title"><div><h3>👥 Tus amigos</h3><span class="social-section-kicker">Ordenados de mayor a menor cantidad de animes terminados.</span></div><div class="social-actions social-actions-tools"><button class="social-modal-launch" id="socialOpenSearchModal" type="button"><span class="social-launch-icon">⌕</span> Buscar amigo</button><button id="socialShowRequests" type="button">Solicitudes <span id="socialRequestCount">0</span></button><button id="socialShowBlocked" type="button">Bloqueados <span id="socialBlockedCount">0</span></button></div></div>
+<div class="social-section-title"><div><h3>👥 Tus amigos</h3></div><div class="social-actions social-actions-tools"><button class="social-modal-launch" id="socialOpenSearchModal" type="button"><span class="social-launch-icon">⌕</span> Buscar amigo</button><button id="socialShowRequests" type="button">Solicitudes <span id="socialRequestCount">0</span></button><button id="socialShowBlocked" type="button">Bloqueados <span id="socialBlockedCount">0</span></button></div></div>
 <div class="social-request-alert" hidden="" id="socialRequestAlert"><strong id="socialRequestAlertTitle">Tenés solicitudes de amistad</strong><span id="socialRequestAlertText">Revisalas abajo.</span></div>
 <div id="socialSearchModalContent" style="display:none"><div class="social-search friends-search"><input id="socialUserSearch" placeholder="Buscar usuario..." type="search"/><button id="socialUserSearchBtn" type="button">Buscar</button></div><div class="social-list" id="socialUserResults"></div></div>
 <div class="social-subsection" hidden="" id="socialRequestsSection"><h4>Solicitudes recibidas</h4><div class="social-list" id="socialFriendRequests"></div></div>
@@ -2523,7 +2681,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div id="socialFriendsSection"><div class="social-friend-list" id="socialFriendList"></div></div>
 </section>
 <section class="social-card friends-main-view" id="friendsMainViewOpinions">
-<div class="social-section-title"><div><h3>💬 Opiniones</h3><span class="social-section-kicker">Las opiniones de tus amigos, de la más reciente a la más vieja.</span></div></div>
+<div class="social-section-title"><div><h3>💬 Opiniones</h3></div></div>
 <div class="social-friends-opinions" id="socialFriendsOpinions"></div>
 </section>
 <section class="social-card" id="socialFriendDetailCard" style="display:none">
@@ -2577,12 +2735,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <span>Ranking de perfiles</span>
 </div>
 <section class="social-card" id="socialGlobalPodium" style="display:none">
-<div class="social-section-title"><div><h3><img alt="" aria-hidden="true" class="social-inline-icon social-podium-inline-icon" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'&gt;&lt;path d='M7 37h34M10 37V22h8v15M20 37V13h8v24M30 37V7h8v30' stroke='%23dbeafe' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/&gt;&lt;path d='M8 22h12M28 13h12' stroke='%2360a5fa' stroke-width='3.2' stroke-linecap='round'/&gt;&lt;/svg&gt;"/> Podio</h3><span class="social-section-kicker">Usuarios con más animes terminados que además tienen opinión publicada.</span></div></div>
+<div class="social-section-title"><div><h3><img alt="" aria-hidden="true" class="social-inline-icon social-podium-inline-icon" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'&gt;&lt;path d='M7 37h34M10 37V22h8v15M20 37V13h8v24M30 37V7h8v30' stroke='%23dbeafe' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/&gt;&lt;path d='M8 22h12M28 13h12' stroke='%2360a5fa' stroke-width='3.2' stroke-linecap='round'/&gt;&lt;/svg&gt;"/> Podio</h3></div></div>
 <div><h4><img alt="" aria-hidden="true" class="social-inline-icon" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'&gt;&lt;rect x='4' y='5' width='16' height='14' rx='2' stroke='%2360a5fa' stroke-width='1.8'/&gt;&lt;path d='m9 5 1.5 14M15 5l-1.5 14' stroke='%23dbeafe' stroke-width='1.8'/&gt;&lt;/svg&gt;"/> Más animes terminados y opinados</h4><div class="social-podium-list" id="socialPodiumWatched"></div></div>
 </section>
 <section class="social-card" id="socialGlobalRankingCard">
 <div class="social-section-title global-header">
-<div><h3><img alt="" aria-hidden="true" class="social-inline-icon" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'&gt;&lt;circle cx='12' cy='12' r='9' stroke='%2360a5fa' stroke-width='1.8'/&gt;&lt;path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18' stroke='%23dbeafe' stroke-width='1.8'/&gt;&lt;/svg&gt;"/> Ranking global de animes</h3><span class="social-section-kicker">Los animes mejor puntuados por todos los usuarios, tengan opinión publicada o no.</span></div>
+<div><h3><img alt="" aria-hidden="true" class="social-inline-icon" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'&gt;&lt;circle cx='12' cy='12' r='9' stroke='%2360a5fa' stroke-width='1.8'/&gt;&lt;path d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18' stroke='%23dbeafe' stroke-width='1.8'/&gt;&lt;/svg&gt;"/> Ranking global de animes</h3><span class="social-section-kicker">Los animes mejor puntuados por todos los usuarios.</span></div>
 </div>
 <div class="social-search"><input id="socialAnimeSearch" placeholder="Buscar anime..." type="search"/><button id="socialAnimeSearchBtn" type="button">Buscar</button></div>
 <div class="social-global-anime-list" id="socialAnimeRank"></div>
@@ -2706,15 +2864,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <input id="newSearch" placeholder="Escribí un nombre..."/>
 </label>
 <label class="filter-field">
-<span class="filter-label">🎭 Género</span>
+<span class="filter-label filter-label-genre">Género</span>
 <select id="genreFilter"><option value="">Todos los géneros</option></select>
 </label>
 <label class="filter-field">
-<span class="filter-label">📅 Año</span>
+<span class="filter-label filter-label-year">Año</span>
 <select id="yearFilter"><option value="">Todos los años</option></select>
 </label>
 <label class="filter-field">
-<span class="filter-label">🗓️ Trimestre</span>
+<span class="filter-label filter-label-quarter">Trimestre</span>
 <select id="quarterFilter"><option value="">Todos los trimestres</option></select>
 </label>
 <button type="button" class="filter-clear" id="clearFilters">↺ Limpiar</button>
@@ -2734,15 +2892,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <section id="newRandomView" style="display:none">
 <div class="filters random-filters">
 <label class="filter-field">
-<span class="filter-label">🎭 Género</span>
+<span class="filter-label filter-label-genre">Género</span>
 <select id="randomGenre"><option value="">Todos los géneros</option></select>
 </label>
 <label class="filter-field">
-<span class="filter-label">📅 Año</span>
+<span class="filter-label filter-label-year">Año</span>
 <select id="randomYear"><option value="">Todos los años</option></select>
 </label>
 <label class="filter-field">
-<span class="filter-label">🗓️ Trimestre</span>
+<span class="filter-label filter-label-quarter">Trimestre</span>
 <select id="randomQuarter"><option value="">Todos los trimestres</option></select>
 </label>
 <button type="button" class="reroll-button minimal-action" data-icon="new3" id="reroll">Nuevos 3</button>
@@ -2754,9 +2912,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </div>
 <div class="proto-panel watching-panel" id="watchingPanel">
 <div class="proto-sheet">
-<div class="proto-head"><h2><span aria-hidden="true" class="watching-title-icon watching-title-eye"></span><span>Viendo</span></h2></div>
+<div class="proto-head"><h2><span aria-hidden="true" class="watching-title-icon watching-title-eye"></span><span>Viendo</span></h2><button aria-expanded="false" class="watching-toggle-all" id="watchingToggleAll" type="button">Abrir todo</button></div>
 <div id="watchingList"></div>
-<div class="proto-note" id="watchingEmpty" style="display:none">No tenés temporadas empezadas todavía.</div>
 </div>
 </div>
 <div class="modal detail-modal" id="detailModal">
@@ -6254,7 +6411,7 @@ function renderWatching(){
     list.appendChild(c);
     makeCover(img,imgName);
   }
-  empty.style.display=n?'none':'block';
+  if(empty)empty.style.display=n?'none':'block';
 }
 
 function renderInlineDetail(name,row){
@@ -7031,6 +7188,12 @@ showSagaMode();
 
   function mrIntegratedRenderWatching(){
     const list=document.getElementById('watchingList'),empty=document.getElementById('watchingEmpty');if(!list)return;
+    const viewStateKey='miranking-watching-open-state-v1';
+    const readViewState=()=>{try{const s=JSON.parse(localStorage.getItem(viewStateKey)||'{}');return{sections:s?.sections&&typeof s.sections==='object'?s.sections:{},cards:s?.cards&&typeof s.cards==='object'?s.cards:{}}}catch(e){return{sections:{},cards:{}}}};
+    const writeViewState=s=>{try{localStorage.setItem(viewStateKey,JSON.stringify(s))}catch(e){}};
+    const persistViewState=()=>{const s=readViewState();list.querySelectorAll('details.watching-section[data-watch-section]').forEach(el=>{s.sections[el.dataset.watchSection]=!!el.open});list.querySelectorAll('details.watch-main-card[data-watch-anime-key]').forEach(el=>{s.cards[el.dataset.watchAnimeKey]=!!el.open});writeViewState(s)};
+    persistViewState();
+    const savedViewState=readViewState();
     list.replaceChildren();
     const meta=getWatchMeta();
     const candidates=new Map();
@@ -7107,7 +7270,7 @@ showSagaMode();
     const sections=[['pending',pending],['finished',finished]];
 
     for(const [kind,arr] of sections){
-      const section=document.createElement('details');section.className='watching-section';section.open=true;
+      const section=document.createElement('details');section.className='watching-section';section.dataset.watchSection=kind;section.open=Object.prototype.hasOwnProperty.call(savedViewState.sections,kind)?!!savedViewState.sections[kind]:true;section.addEventListener('toggle',persistViewState);
       const summary=document.createElement('summary');
       const icon=document.createElement('span');icon.className=`watch-section-icon watch-section-icon-${kind}`;icon.setAttribute('aria-hidden','true');
       const label=document.createElement('span');label.className='watch-section-label';label.textContent=t(kind);
@@ -7118,7 +7281,7 @@ showSagaMode();
       if(!arr.length)body.innerHTML='<div class="watch-main-empty">No hay sagas en esta sección.</div>';
 
       for(const e of arr){
-        const card=document.createElement('details');card.className='watch-main-card';
+        const card=document.createElement('details');card.className='watch-main-card';card.dataset.watchAnimeKey=detailKey(e.x.name);card.open=Object.prototype.hasOwnProperty.call(savedViewState.cards,card.dataset.watchAnimeKey)?!!savedViewState.cards[card.dataset.watchAnimeKey]:false;card.addEventListener('toggle',persistViewState);
         const sm=document.createElement('summary');
         // No confiar ciegamente en el nombre guardado de la temporada:
         // datos antiguos pueden tener una temporada asociada al anime equivocado.
@@ -7466,8 +7629,8 @@ dy><button class="print-btn" onclick="window.print()">Imprimir / Guardar como PD
       statsProgressTitle:'Progreso',statsFinished:'sagas terminadas',statsPending:'sagas pendientes',statsSeasons:'temporadas puntuadas',statsEpisodes:'capítulos puntuados',
       statsExtremes:'Tus extremos',highest:'Más alto',lowest:'Más bajo',median:'Mediana',genres:'Tus géneros',scoreDist:'Distribución de puntuaciones',top10:'Tu Top 10',bottom5:'Los 5 con menor puntuación',
       settings:'Configuración',account:'Cuenta',language:'Idioma',appearance:'Apariencia',data:'Datos y mantenimiento',info:'Información',languageHelp:'Elegí el idioma de la interfaz. La preferencia queda guardada en este dispositivo.',languageLabel:'Idioma de MiRanking',languageLabelHelp:'Español o English.',appearanceHelp:'Personalizá cómo se ve la aplicación sin tocar tus puntuaciones.',themeLabel:'Tema',themeHelp:'Oscuro o claro.',densityLabel:'Densidad',densityHelp:'Reduce espacios para mostrar más contenido.',dataHelp:'Copias de seguridad, cachés y estados auxiliares. Tus puntuaciones se guardan localmente.',
-      scoreAnime:'Puntuar anime',nickname:'Sobrenombre (opcional)',scoreSaga:'🏆 Puntuar saga',scoreSeason:'📺 Puntuar temporada',scoreEpisode:'🎬 Puntuar capítulo',whole:'La obra completa',part:'Temporada, parte o arco',individual:'Un capítulo individual',
-      random:'Aleatorio',list:'Lista',search:'Buscar anime',genre:'🎭 Género',year:'📅 Año',quarter:'🗓️ Trimestre',clear:'↺ Limpiar',reroll:'Nuevos 3',
+       scoreAnime:'Puntuar anime',nickname:'Sobrenombre (opcional)',scoreSaga:'Puntuar saga',scoreSeason:'Puntuar temporada',scoreEpisode:'Puntuar capítulo',whole:'La obra completa',part:'Temporada, parte o arco',individual:'Un capítulo individual',
+       random:'Aleatorio',list:'Lista',search:'Buscar anime',genre:'Género',year:'Año',quarter:'Trimestre',clear:'↺ Limpiar',reroll:'Nuevos 3',
       watching:'Viendo',pending:'Pendientes',finished:'Terminadas',
       chooseSeason:'Elegí la temporada que querés puntuar',chooseEpisodeSeason:'Elegí una temporada para ver sus capítulos',chooseEpisode:'Elegí el capítulo que querés puntuar:',noEpisodes:'Sin datos de episodios',
       share:'Comparte puntaje con:',edit:'Editar',scoreAvg:'Puntuación obtenida por promedio',
@@ -7485,8 +7648,8 @@ dy><button class="print-btn" onclick="window.print()">Imprimir / Guardar como PD
       statsProgressTitle:'📺 Progress',statsFinished:'finished sagas',statsPending:'pending sagas',statsSeasons:'rated seasons',statsEpisodes:'rated episodes',
       statsExtremes:'🎯 Your extremes',highest:'Highest',lowest:'Lowest',median:'Median',genres:'🎭 Your genres',scoreDist:'⭐ Score distribution',top10:'🏆 Your Top 10',bottom5:'📉 Five lowest scores',
       settings:'⚙️ Settings',account:'👤 Account',language:'🌐 Language',appearance:'🎨 Appearance',data:'🗄️ Data & maintenance',info:'ℹ️ Information',languageHelp:'Choose the interface language. This preference is saved on this device.',languageLabel:'MiRanking language',languageLabelHelp:'Spanish, English or Portuguese.',appearanceHelp:'Customize the app appearance without changing your scores.',themeLabel:'Theme',themeHelp:'Dark or light.',densityLabel:'Density',densityHelp:'Use less spacing to show more content.',dataHelp:'Backups, caches and auxiliary states. Your scores are stored locally.',
-      scoreAnime:'Rate anime',nickname:'Nickname (optional)',scoreSaga:'🏆 Rate saga',scoreSeason:'📺 Rate season',scoreEpisode:'🎬 Rate episode',whole:'Whole work',part:'Season, part or arc',individual:'Single episode',
-      random:'🎲 Random',list:'📋 List',search:'🔎 Search anime',genre:'🎭 Genre',year:'📅 Year',quarter:'🗓️ Quarter',clear:'↺ Clear',reroll:'🎲 New 3',
+       scoreAnime:'Rate anime',nickname:'Nickname (optional)',scoreSaga:'Rate saga',scoreSeason:'Rate season',scoreEpisode:'Rate episode',whole:'Whole work',part:'Season, part or arc',individual:'Single episode',
+       random:'🎲 Random',list:'📋 List',search:'🔎 Search anime',genre:'Genre',year:'Year',quarter:'Quarter',clear:'↺ Clear',reroll:'🎲 New 3',
       watching:'Watching',pending:'Pending',finished:'Finished',
       chooseSeason:'Choose the season to score',chooseEpisodeSeason:'Choose a season to view its episodes',chooseEpisode:'Choose the episode to score:',noEpisodes:'No episode data',
       share:'Shares score with:',edit:'Edit',scoreAvg:'Score obtained by average',
@@ -7504,8 +7667,8 @@ dy><button class="print-btn" onclick="window.print()">Imprimir / Guardar como PD
       statsProgressTitle:'Progresso',statsFinished:'sagas concluídas',statsPending:'sagas pendentes',statsSeasons:'temporadas avaliadas',statsEpisodes:'episódios avaliados',
       statsExtremes:'Seus extremos',highest:'Mais alto',lowest:'Mais baixo',median:'Mediana',genres:'Seus gêneros',scoreDist:'Distribuição das notas',top10:'Seu Top 10',bottom5:'Os 5 com menor nota',
       settings:'Configurações',account:'Conta',language:'Idioma',appearance:'Aparência',data:'Dados e manutenção',info:'Informações',languageHelp:'Escolha o idioma da interface. A preferência fica salva neste dispositivo.',languageLabel:'Idioma do MiRanking',languageLabelHelp:'Espanhol, English ou Português.',appearanceHelp:'Personalize a aparência do aplicativo sem alterar suas notas.',themeLabel:'Tema',themeHelp:'Escuro ou claro.',densityLabel:'Densidade',densityHelp:'Reduz os espaços para mostrar mais conteúdo.',dataHelp:'Backups, caches e estados auxiliares. Suas notas são salvas localmente.',
-      scoreAnime:'Avaliar anime',nickname:'Apelido (opcional)',scoreSaga:'🏆 Avaliar saga',scoreSeason:'📺 Avaliar temporada',scoreEpisode:'🎬 Avaliar episódio',whole:'Obra completa',part:'Temporada, parte ou arco',individual:'Um episódio individual',
-      random:'🎲 Aleatório',list:'📋 Lista',search:'Buscar anime',genre:'🎭 Gênero',year:'📅 Ano',quarter:'🗓️ Trimestre',clear:'↺ Limpar',reroll:'🎲 Novos 3',
+       scoreAnime:'Avaliar anime',nickname:'Apelido (opcional)',scoreSaga:'Avaliar saga',scoreSeason:'Avaliar temporada',scoreEpisode:'Avaliar episódio',whole:'Obra completa',part:'Temporada, parte ou arco',individual:'Um episódio individual',
+       random:'🎲 Aleatório',list:'📋 Lista',search:'Buscar anime',genre:'Gênero',year:'Ano',quarter:'Trimestre',clear:'↺ Limpar',reroll:'🎲 Novos 3',
       watching:'Assistindo',pending:'Pendentes',finished:'Concluídas',
       chooseSeason:'Escolha a temporada que quer avaliar',chooseEpisodeSeason:'Escolha uma temporada para ver seus episódios',chooseEpisode:'Escolha o episódio que quer avaliar:',noEpisodes:'Sem dados de episódios',
       share:'Compartilha a nota com:',edit:'Editar',scoreAvg:'Nota obtida pela média',
@@ -7575,7 +7738,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
     const scoreHead=document.querySelector('#scoreModal .modal-head h2');if(scoreHead)scoreHead.textContent=t('scoreAnime');
     const scoreName=document.getElementById('scoreNickname');if(scoreName)scoreName.placeholder=appPrefs.language==='en'?'e.g. favorite one':'Ej.: la enana nazi';
     const scoreLabel=document.querySelector('#scoreNickname')?.closest('.nickname-field')?.querySelector('span');if(scoreLabel)scoreLabel.textContent=t('nickname');
-    const modeMap=[['saga','scoreSaga','whole'],['season','scoreSeason','part'],['episode','scoreEpisode','individual']];document.querySelectorAll('#scoreModeButtons button[data-mode]').forEach(btn=>{const m=modeMap.find(x=>x[0]===btn.dataset.mode);if(!m)return;const b=btn.querySelector('b'),sp=btn.querySelector('span');if(b)b.textContent=t(m[1]);if(sp)sp.textContent=t(m[2])});
+     const modeMap=[['saga','scoreSaga','whole'],['season','scoreSeason','part'],['episode','scoreEpisode','individual']];document.querySelectorAll('#scoreModeButtons button[data-mode]').forEach(btn=>{const m=modeMap.find(x=>x[0]===btn.dataset.mode);if(!m)return;const b=btn.querySelector('b'),sp=btn.querySelector('span');if(b){const icon=b.querySelector('.score-mode-icon');b.replaceChildren(...(icon?[icon,document.createTextNode(' '+t(m[1]))]:[document.createTextNode(t(m[1]))]))}if(sp)sp.textContent=t(m[2])});
     const tabs=[['newTabList','list'],['newTabRandom','random']];tabs.forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=t(key)});
     const filterLabels=[...document.querySelectorAll('#newListView .filter-label, #newRandomView .filter-label')];const fk=['search','genre','year','quarter'];filterLabels.forEach((el,i)=>{if(fk[i%4])el.textContent=t(fk[i%4])});
     byId('reroll','reroll');
@@ -7650,7 +7813,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
     const startup=document.getElementById('configStartSection');if(startup){for(const o of startup.options){if(o.value==='ranking')o.textContent=lang==='pt'?'Meu Ranking':lang==='en'?'My Ranking':'Mi Ranking';else if(o.value==='score')o.textContent=lang==='pt'?'Avaliar':lang==='en'?'Rate':'Puntuar';else if(o.value==='watching')o.textContent=lang==='pt'?'Assistindo':lang==='en'?'Watching':'Viendo';else if(o.value==='stats')o.textContent='Estatísticas';}}
     // Traduce los nombres de géneros visibles en los filtros sin modificar el catálogo original.
     document.querySelectorAll('#genreFilter option,#randomGenre option').forEach(o=>{const pair=GENRE_I18N[o.value];if(pair)o.textContent=lang==='en'?pair[0]:lang==='pt'?pair[1]:o.value;});
-    document.querySelectorAll('#quarterFilter option,#randomQuarter option').forEach(o=>{const q=o.value;if(lang==='en')o.textContent=q.replace('1er trimestre','Q1').replace('2do trimestre','Q2').replace('3er trimestre','Q3').replace('4to trimestre','Q4');else if(lang==='pt')o.textContent=q.replace('1er trimestre','1º trimestre').replace('2do trimestre','2º trimestre').replace('3er trimestre','3º trimestre').replace('4to trimestre','4º trimestre');else o.textContent=q;});
+    document.querySelectorAll('#quarterFilter option,#randomQuarter option').forEach(o=>{const q=o.value;if(!q){o.textContent=lang==='en'?'All quarters':'Todos los trimestres';return}if(lang==='en')o.textContent=q.replace('1er trimestre','Q1').replace('2do trimestre','Q2').replace('3er trimestre','Q3').replace('4to trimestre','Q4');else if(lang==='pt')o.textContent=q.replace('1er trimestre','1º trimestre').replace('2do trimestre','2º trimestre').replace('3er trimestre','3º trimestre').replace('4to trimestre','4º trimestre');else o.textContent=q;});
   }
   const __applyLanguageBase=applyLanguage;
   applyLanguage=function(){__applyLanguageBase();applyExtendedLanguage();};
@@ -7818,6 +7981,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
 <button id="mirAuthContinue" type="button">Seguir sin cuenta</button>
 </div>
 </div>
+<div aria-hidden="true" id="mrWelcomeTour"><section aria-describedby="mrWelcomeTourIntro" aria-labelledby="mrWelcomeTourTitle" aria-modal="true" class="mr-welcome-card" role="dialog" tabindex="-1"><button aria-label="Cerrar guía" class="mr-welcome-close-icon" id="mrWelcomeTourCloseIcon" type="button">×</button><p class="mr-welcome-eyebrow" id="mrWelcomeTourEyebrow">GUÍA RÁPIDA</p><h2 id="mrWelcomeTourTitle">Qué podés hacer en MiRanking</h2><p class="mr-welcome-intro" id="mrWelcomeTourIntro">Estas son las herramientas principales para organizar y compartir tus gustos de anime.</p><div class="mr-welcome-grid"><article class="mr-welcome-feature"><span class="mr-welcome-number">01</span><div><h3 id="mrWelcomeTourRankingTitle">Mi Ranking</h3><p id="mrWelcomeTourRankingDesc">Revisá tus animes puntuados, ordenalos y editá sus notas.</p></div></article><article class="mr-welcome-feature"><span class="mr-welcome-number">02</span><div><h3 id="mrWelcomeTourScoreTitle">Puntuar</h3><p id="mrWelcomeTourScoreDesc">Buscá anime y puntuá del 1 al 100, también por temporada o episodio.</p></div></article><article class="mr-welcome-feature"><span class="mr-welcome-number">03</span><div><h3 id="mrWelcomeTourWatchingTitle">Viendo</h3><p id="mrWelcomeTourWatchingDesc">Organizá pendientes, terminados y Para ver más tarde; seguí tus episodios.</p></div></article><article class="mr-welcome-feature"><span class="mr-welcome-number">04</span><div><h3 id="mrWelcomeTourFriendsTitle">Amigos</h3><p id="mrWelcomeTourFriendsDesc">Encontrá amigos y compará sus rankings y gustos.</p></div></article><article class="mr-welcome-feature"><span class="mr-welcome-number">05</span><div><h3 id="mrWelcomeTourGlobalTitle">Global</h3><p id="mrWelcomeTourGlobalDesc">Explorá rankings, puntuaciones y opiniones de la comunidad.</p></div></article><article class="mr-welcome-feature"><span class="mr-welcome-number">06</span><div><h3 id="mrWelcomeTourAccountTitle">Tu cuenta</h3><p id="mrWelcomeTourAccountDesc">La cuenta es opcional. Iniciá sesión para respaldar y sincronizar tu ranking.</p></div></article></div><p class="mr-welcome-note" id="mrWelcomeTourNote">Sin cuenta, tus puntuaciones se guardan en este navegador.</p><div class="mr-welcome-actions"><button class="mr-welcome-dismiss" id="mrWelcomeTourDismiss" type="button">Cerrar guía</button><button class="mr-welcome-start" id="mrWelcomeTourStart" type="button">Empezar a puntuar</button></div></section></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script id="miranking-supabase-auth">
 (function(){
@@ -7917,7 +8081,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   function updateCornerAvatar(){const b=$('mirUserCorner');if(!b)return;const loggedIn=!!(session?.user||authUser),name=loggedIn?(profileName()||tx('user')):tx('login'),p=getProfile();b.innerHTML='';const avatar=document.createElement('span');avatar.className='mir-user-corner-avatar';avatar.setAttribute('aria-hidden','true');if(loggedIn&&p.avatar){const im=document.createElement('img');im.className='mir-user-corner-image';im.src=p.avatar;im.alt='';avatar.appendChild(im)}else avatar.textContent=String(name).charAt(0).toUpperCase()||'?';b.appendChild(avatar);const label=document.createElement('span');label.className='mir-user-corner-label';label.id='mirUserCornerLabel';label.textContent=name;b.appendChild(label);const ownBadge=loggedIn?(window.miRankingBadges?.html?.(authUser?.id||session?.user?.id)||''):'';if(ownBadge){const badgeWrap=document.createElement('span');badgeWrap.className='mir-user-corner-badge';badgeWrap.innerHTML=ownBadge;b.appendChild(badgeWrap)}const dot=document.createElement('span');dot.className='mir-user-corner-status';dot.setAttribute('aria-hidden','true');dot.hidden=!loggedIn;b.appendChild(dot);b.classList.toggle('offline',loggedIn&&!navigator.onLine);b.classList.toggle('error',loggedIn&&readSyncMeta().lastError===true);b.title=name;b.setAttribute('aria-label',name);b.setAttribute('aria-haspopup',loggedIn?'menu':'dialog');const mn=$('mirUserMenuName');if(mn)mn.textContent=name;const ms=$('mirUserMenuState');if(ms)ms.textContent=loggedIn?tx('connected'):tx('logged')}
   function setUserMenu(open){const menu=$('mirUserMenu'),btn=$('mirUserCorner');if(!menu||!btn)return;menu.classList.toggle('open',open);menu.setAttribute('aria-hidden',open?'false':'true');btn.setAttribute('aria-expanded',open?'true':'false')}
   async function afterAuthenticated(isNew){
-    authUser=session?.user||null;localStorage.setItem(AUTH_LOCAL+'-username',normalizeUsername(authUser?.user_metadata?.username||localStorage.getItem(AUTH_LOCAL+'-username')||''));
+    closeWelcomeTour(false);authUser=session?.user||null;localStorage.setItem(AUTH_LOCAL+'-username',normalizeUsername(authUser?.user_metadata?.username||localStorage.getItem(AUTH_LOCAL+'-username')||''));
     const cloud=await fetchCloudState();if(cloud.error){syncStatus('error','syncError');msg(tx('cloudErr'),'error');throw cloud.error}
     if(cloud.row){
       const remoteState=stateOnly(cloud.row),localState=collectCloudState(),meta=readSyncMeta();
@@ -7936,7 +8100,19 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
     if(isNew){msg(tx('created'),'ok');setTimeout(()=>msg(''),1200)}
   }
   function ensureSupabaseClient(){if(sb?.auth)return sb;if(!window.supabase?.createClient)throw new Error('No se pudo cargar la biblioteca de Supabase.');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return sb}
-  async function initAuth(){try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');updateAccountUI();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();if(session?.user){authUser=session.user;updateAccountUI()}}}
+  const welcomeTourKey='mi-ranking-welcome-tour-v1';
+  const welcomeTourEl=$('mrWelcomeTour');
+  let welcomeTourTimer=null,welcomeTourPreviousOverflow=null;
+  const welcomeTourText={
+    es:{eyebrow:'GUÍA RÁPIDA',title:'Qué podés hacer en MiRanking',intro:'Explorá las funciones principales y empezá a armar tu ranking.',rankingTitle:'Mi Ranking',rankingDesc:'Tus animes puntuados, ordenados por nota. Podés editar y acomodar posiciones.',scoreTitle:'Puntuar',scoreDesc:'Buscá anime y poné una nota del 1 al 100, por temporada o episodio.',watchingTitle:'Viendo',watchingDesc:'Organizá pendientes, terminados y Para ver más tarde; seguí tus episodios.',friendsTitle:'Amigos',friendsDesc:'Buscá amigos y compará sus gustos y rankings.',globalTitle:'Global',globalDesc:'Explorá rankings, puntuaciones y opiniones de la comunidad.',accountTitle:'Tu cuenta',accountDesc:'Es opcional. Iniciá sesión para respaldar y sincronizar tu ranking.',note:'Sin iniciar sesión, tus puntuaciones se guardan en este navegador.',dismiss:'Cerrar guía',start:'Empezar a puntuar'},
+    en:{eyebrow:'QUICK GUIDE',title:'What you can do with MiRanking',intro:'Explore the main features and start building your anime ranking.',rankingTitle:'My Ranking',rankingDesc:'Your scored anime, ordered by rating. Edit ratings and adjust positions.',scoreTitle:'Rate',scoreDesc:'Find anime and rate it from 1 to 100, by season or episode too.',watchingTitle:'Watching',watchingDesc:'Organize pending, finished and watch-later anime; track episodes.',friendsTitle:'Friends',friendsDesc:'Find friends and compare your anime tastes and rankings.',globalTitle:'Global',globalDesc:'Explore community rankings, scores and opinions.',accountTitle:'Your account',accountDesc:'An account is optional. Sign in to back up and sync your ranking.',note:'Without signing in, your scores stay saved in this browser.',dismiss:'Close guide',start:'Start rating anime'},
+    pt:{eyebrow:'GUIA RÁPIDO',title:'O que você pode fazer no MiRanking',intro:'Explore os principais recursos e comece a montar seu ranking de animes.',rankingTitle:'Meu Ranking',rankingDesc:'Seus animes avaliados, ordenados pela nota. Edite as notas e ajuste as posições.',scoreTitle:'Avaliar',scoreDesc:'Encontre animes e dê uma nota de 1 a 100, por temporada ou episódio.',watchingTitle:'Assistindo',watchingDesc:'Organize pendentes, concluídos e Para ver mais tarde; acompanhe os episódios.',friendsTitle:'Amigos',friendsDesc:'Encontre amigos e compare gostos e rankings.',globalTitle:'Global',globalDesc:'Explore rankings, notas e opiniões da comunidade.',accountTitle:'Sua conta',accountDesc:'A conta é opcional. Entre para salvar e sincronizar seu ranking.',note:'Sem entrar, suas notas ficam salvas neste navegador.',dismiss:'Fechar guia',start:'Começar a avaliar'}
+  };
+  function applyWelcomeTourLanguage(){const current=welcomeTourText[document.documentElement.lang]||welcomeTourText.es;const map={eyebrow:'mrWelcomeTourEyebrow',title:'mrWelcomeTourTitle',intro:'mrWelcomeTourIntro',rankingTitle:'mrWelcomeTourRankingTitle',rankingDesc:'mrWelcomeTourRankingDesc',scoreTitle:'mrWelcomeTourScoreTitle',scoreDesc:'mrWelcomeTourScoreDesc',watchingTitle:'mrWelcomeTourWatchingTitle',watchingDesc:'mrWelcomeTourWatchingDesc',friendsTitle:'mrWelcomeTourFriendsTitle',friendsDesc:'mrWelcomeTourFriendsDesc',globalTitle:'mrWelcomeTourGlobalTitle',globalDesc:'mrWelcomeTourGlobalDesc',accountTitle:'mrWelcomeTourAccountTitle',accountDesc:'mrWelcomeTourAccountDesc',note:'mrWelcomeTourNote',dismiss:'mrWelcomeTourDismiss',start:'mrWelcomeTourStart'};for(const [key,id]of Object.entries(map)){const el=$(id);if(el)el.textContent=current[key]}$('mrWelcomeTourCloseIcon')?.setAttribute('aria-label',current.dismiss)}
+  function welcomeTourHasScores(){try{if(Array.isArray(data)&&data.some(item=>Number(item?.score)>0))return true}catch(e){}try{return Object.values(seasonDetails||{}).some(detail=>(Array.isArray(detail?.seasons)?detail.seasons:[]).some(season=>Number(season?.score)>0||Object.values(season?.episodes||{}).some(score=>Number(score)>0)))}catch(e){return false}}
+  function closeWelcomeTour(markSeen=true){if(welcomeTourTimer){clearTimeout(welcomeTourTimer);welcomeTourTimer=null}if(markSeen){try{localStorage.setItem(welcomeTourKey,'1')}catch(e){}}if(welcomeTourEl?.classList.contains('open')){welcomeTourEl.classList.remove('open');welcomeTourEl.setAttribute('aria-hidden','true');document.body.style.overflow=welcomeTourPreviousOverflow??'';welcomeTourPreviousOverflow=null}}
+  function maybeShowWelcomeTour(){if(!welcomeTourEl||session?.user||authUser||welcomeTourHasScores())return;try{if(localStorage.getItem(welcomeTourKey)==='1')return}catch(e){}if(welcomeTourTimer)clearTimeout(welcomeTourTimer);welcomeTourTimer=setTimeout(()=>{welcomeTourTimer=null;if(session?.user||authUser||welcomeTourHasScores())return;try{if(localStorage.getItem(welcomeTourKey)==='1')return}catch(e){}applyWelcomeTourLanguage();welcomeTourPreviousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';welcomeTourEl.classList.add('open');welcomeTourEl.setAttribute('aria-hidden','false');try{$('mrWelcomeTourStart')?.focus({preventScroll:true})}catch(e){$('mrWelcomeTourStart')?.focus()}},1450)}
+  $('mrWelcomeTourCloseIcon')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourDismiss')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourStart')?.addEventListener('click',()=>{closeWelcomeTour(true);setTimeout(()=>openStartTutorial(),0)});welcomeTourEl?.addEventListener('click',ev=>{if(ev.target===welcomeTourEl)closeWelcomeTour(true)});document.addEventListener('keydown',ev=>{if(!welcomeTourEl?.classList.contains('open'))return;if(ev.key==='Escape'){closeWelcomeTour(true);return}if(ev.key==='Tab'){const focusable=[...welcomeTourEl.querySelectorAll('button:not([disabled])')];if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];if(ev.shiftKey&&document.activeElement===first){ev.preventDefault();last.focus()}else if(!ev.shiftKey&&document.activeElement===last){ev.preventDefault();first.focus()}}});  async function initAuth(){try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');updateAccountUI();maybeShowWelcomeTour();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI();maybeShowWelcomeTour()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();if(session?.user){authUser=session.user;updateAccountUI()}}}
   async function changePassword(){
     const current=$('mirCurrentPassword').value,newPass=$('mirNewPassword').value,repeat=$('mirNewPassword2').value;if(newPass.length<8){passwordMsg(tx('badPass'),'error');return}if(newPass!==repeat){passwordMsg(tx('same'),'error');return}if(newPass===current){passwordMsg(tx('passwordSame'),'error');return}
     const username=normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'');if(!username){passwordMsg(tx('passwordUnavailable'),'error');return}
@@ -9943,7 +10119,8 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
  function read(){try{const a=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(a)?a.filter(x=>x&&x.name):[]}catch(e){return []}}
  function write(a){try{localStorage.setItem(STORE,JSON.stringify(a));return true}catch(e){alert('No se pudo guardar la lista en este navegador.');return false}}
  function paintButtons(){const saved=new Set(read().map(x=>key(x.name)));document.querySelectorAll('[data-mr-watch-later]').forEach(b=>{const yes=saved.has(key(b.dataset.mrWatchLater));b.classList.toggle('is-saved',yes);const label=yes?'✓ Guardado':'＋ Más tarde';if(b.textContent!==label)b.textContent=label;b.setAttribute('aria-pressed',yes?'true':'false');b.title=yes?'Ya está en Para ver más tarde':'Guardar en Para ver más tarde'})}
- function ensureSection(){const list=document.getElementById('watchingList');if(!list)return null;let sec=document.getElementById('mrWatchLaterSection');if(!sec){sec=document.createElement('section');sec.id='mrWatchLaterSection';sec.innerHTML='<details id="mrWatchLaterDetails" open><summary class="mr120-accordion-summary"><span class="mr120-accordion-title">Para ver más tarde</span><span class="mr-watch-later-count" id="mrWatchLaterCount">0</span></summary><div id="mrWatchLaterItems"></div></details>';list.insertAdjacentElement('afterend',sec)}return sec}
+ const watchLaterOpenKey='miranking-watch-later-open-v1';
+ function bindWatchLaterOpenState(details){if(!details||details.dataset.mrWatchLaterOpenBound)return;let open=true;try{open=localStorage.getItem(watchLaterOpenKey)!=='0'}catch(e){}details.open=open;details.dataset.mrWatchLaterOpenBound='1';details.addEventListener('toggle',()=>{try{localStorage.setItem(watchLaterOpenKey,details.open?'1':'0')}catch(e){}})} function ensureSection(){const list=document.getElementById('watchingList');if(!list)return null;let sec=document.getElementById('mrWatchLaterSection');if(!sec){sec=document.createElement('section');sec.id='mrWatchLaterSection';sec.innerHTML='<details id="mrWatchLaterDetails"><summary class="mr120-accordion-summary"><span class="mr120-accordion-title">Para ver más tarde</span><span class="mr-watch-later-count" id="mrWatchLaterCount">0</span></summary><div id="mrWatchLaterItems"></div></details>';list.insertAdjacentElement('afterend',sec)}bindWatchLaterOpenState(sec.querySelector('#mrWatchLaterDetails'));return sec}
  function render(){const sec=ensureSection(),host=document.getElementById('mrWatchLaterItems');if(!sec||!host)return;const items=read();const count=document.getElementById('mrWatchLaterCount');if(count)count.textContent=String(items.length);host.innerHTML=items.length?items.map(x=>`<div class="mr-watch-later-row"><img data-mr-watch-cover="${esc(x.name)}" alt=""><div><strong>${esc(x.name)}</strong><small style="display:block;color:var(--muted);font-size:10px;margin-top:3px">Agregado ${new Date(Number(x.addedAt)||Date.now()).toLocaleDateString('es-AR')}</small></div><div class="mr-watch-later-row-actions"><button type="button" data-mr-watch-score-first="${esc(x.name)}">Puntuar episodio 1</button><button type="button" data-mr-watch-remove="${esc(x.name)}">Quitar</button></div></div>`).join(''):'<div class="proto-note">Todavía no guardaste animes para ver más tarde.</div>';host.querySelectorAll('img[data-mr-watch-cover]').forEach(img=>{try{if(typeof window.makeCover==='function')window.makeCover(img,img.dataset.mrWatchCover)}catch(e){}});paintButtons()}
  document.addEventListener('click',ev=>{const b=ev.target.closest('[data-mr-watch-later]');if(b){ev.preventDefault();ev.stopImmediatePropagation();const name=String(b.dataset.mrWatchLater||'').trim();if(!name)return;const items=read(),k=key(name),i=items.findIndex(x=>key(x.name)===k);if(i>=0)items.splice(i,1);else items.unshift({name,addedAt:Date.now()});if(write(items))render();return}const first=ev.target.closest('[data-mr-watch-score-first]');if(first){ev.preventDefault();ev.stopImmediatePropagation();const name=String(first.dataset.mrWatchScoreFirst||'').trim();if(!name)return;const opener=window.mrIntegratedOpenScore||window.openScore;if(typeof opener!=='function'){alert('No se pudo abrir el puntuador.');return}opener({name,score:70,source:'watching'},'watching');requestAnimationFrame(()=>{const mode=document.querySelector('#scoreModeButtons [data-mode="episode"]');if(mode)mode.click();requestAnimationFrame(()=>{if(typeof window.selectEpisodeForScore==='function')window.selectEpisodeForScore(0,1);else document.querySelector('#seasonScoreSelector [data-episode="1"]')?.click();});});return}const rm=ev.target.closest('[data-mr-watch-remove]');if(rm){const k=key(rm.dataset.mrWatchRemove);if(write(read().filter(x=>key(x.name)!==k)))render();return}},true);
  document.getElementById('navWatching')?.addEventListener('click',()=>setTimeout(render,0));
@@ -10683,5 +10860,277 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
     pointer-events: none !important;
   }
   #newList .catalog-item > img { cursor: zoom-in !important; }
-</style></body>
+</style>
+<script id="mr-watching-expand-all-v1">
+(function(){
+  const panel=document.getElementById('watchingPanel');
+  const button=document.getElementById('watchingToggleAll');
+  if(!panel||!button)return;
+  const historyKey='miranking-watching-history-open-v1';
+  const accordions=()=>[...panel.querySelectorAll('#watchingList > details.watching-section, #mrWatchLaterDetails, #mr120HistoryDetails')];
+  function bindHistoryState(){
+    const history=panel.querySelector('#mr120HistoryDetails');
+    if(!history||history.dataset.openStateBound)return;
+    try{const saved=localStorage.getItem(historyKey);if(saved!==null)history.open=saved==='1'}catch(e){}
+    history.dataset.openStateBound='1';
+    history.addEventListener('toggle',()=>{try{localStorage.setItem(historyKey,history.open?'1':'0')}catch(e){}updateLabel()});
+  }
+  function updateLabel(){
+    bindHistoryState();
+    const items=accordions(),allOpen=items.length>0&&items.every(item=>item.open);
+    const lang=document.documentElement.lang||'es';
+    const labels=lang==='en'?['Expand all','Collapse all']:lang==='pt'?['Abrir tudo','Fechar tudo']:['Abrir todo','Cerrar todo'];
+    const label=allOpen?labels[1]:labels[0];
+    if(button.textContent!==label)button.textContent=label;
+    if(button.title!==label)button.title=label;
+    if(button.getAttribute('aria-label')!==label)button.setAttribute('aria-label',label);
+    if(button.getAttribute('aria-expanded')!==String(allOpen))button.setAttribute('aria-expanded',String(allOpen));
+  }
+  button.addEventListener('click',()=>{
+    const items=accordions(),open=items.some(item=>!item.open);
+    items.forEach(item=>{item.open=open});
+    updateLabel();
+  });
+  bindHistoryState();updateLabel();
+  new MutationObserver(updateLabel).observe(panel,{attributes:true,attributeFilter:['open'],childList:true,subtree:true});
+  new MutationObserver(updateLabel).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+})();
+</script>
+<style id="mr-watching-puntuar-listas-style-v1">
+/* Unifica Viendo y Puntuar con el lenguaje visual verde agua de Listas. */
+#watchingPanel,
+#newModal,
+#scoreModal{
+  --mr-ui-accent:#49d6b1;
+  --mr-ui-accent-soft:rgba(73,214,177,.14);
+  --mr-ui-accent-border:rgba(73,214,177,.4);
+  --mr-ui-surface:#121d26;
+  --mr-ui-border:rgba(120,153,170,.24);
+}
+
+/* Viendo: cascadas principales y categorías plegables. */
+#watchingPanel .watching-section,
+#watchingPanel #mrWatchLaterSection details,
+#watchingPanel #mr120HistorySection{
+  border:1px solid var(--mr-ui-border)!important;
+  border-radius:14px!important;
+  background:linear-gradient(150deg,rgba(24,38,49,.94),rgba(15,25,33,.98))!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.09)!important;
+}
+#watchingPanel .watching-section>summary,
+#watchingPanel #mrWatchLaterSection details>summary,
+#watchingPanel #mr120HistoryDetails>summary{
+  border:1px solid transparent!important;
+  border-radius:13px!important;
+  background:linear-gradient(145deg,rgba(23,36,45,.98),rgba(17,28,36,.98))!important;
+  color:#e7f2f0!important;
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease!important;
+}
+#watchingPanel .watching-section>summary:hover,
+#watchingPanel #mrWatchLaterSection details>summary:hover,
+#watchingPanel #mr120HistoryDetails>summary:hover{
+  border-color:var(--mr-ui-accent-border)!important;
+  background:linear-gradient(145deg,rgba(28,53,52,.95),rgba(19,37,40,.98))!important;
+}
+#watchingPanel .watching-section>summary::before,
+#watchingPanel #mrWatchLaterSection details>summary::before,
+#watchingPanel #mr120HistoryDetails>summary::before{
+  color:#73e7c9!important;
+  border-color:rgba(73,214,177,.65)!important;
+  background:rgba(73,214,177,.08)!important;
+}
+#watchingPanel .watching-section>summary::after,
+#watchingPanel #mrWatchLaterSection details>summary::after,
+#watchingPanel #mr120HistoryDetails>summary::after{color:#81d9c3!important}
+#watchingPanel #mr120HistoryDetails>summary .mr120-accordion-title::before{
+  color:#73e7c9!important;border-color:rgba(73,214,177,.65)!important;background:rgba(73,214,177,.08)!important;
+}
+#watchingPanel .watching-title-eye,
+#watchingPanel .watch-section-icon{
+  background-color:rgba(73,214,177,.09)!important;
+  border:1px solid rgba(73,214,177,.24)!important;
+  border-radius:10px!important;
+  padding:3px!important;
+  box-sizing:border-box!important;
+}
+#watchingPanel .watching-title-eye{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='2.8'/%3E%3C/svg%3E")!important;
+}
+#watchingPanel .watch-section-icon-pending{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")!important;
+}
+#watchingPanel .watch-section-icon-finished{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12 2.5 2.5L16.5 9'/%3E%3C/svg%3E")!important;
+}
+#watchingPanel .watch-main-card{
+  border-color:rgba(120,153,170,.25)!important;
+  border-radius:13px!important;
+  background:linear-gradient(150deg,rgba(25,39,50,.92),rgba(17,28,37,.98))!important;
+}
+#watchingPanel .watch-main-card>summary{background:transparent!important;transition:background .16s ease!important}
+#watchingPanel .watch-main-card>summary:hover,
+#watchingPanel .watch-main-card[open]>summary{background:rgba(73,214,177,.055)!important}
+#watchingPanel .watch-main-card>summary::after{color:#81d9c3!important}
+#watchingPanel .watch-main-body{border-top-color:rgba(120,153,170,.18)!important;background:rgba(6,14,20,.18)!important}
+#watchingPanel .watch-main-season{
+  border-color:rgba(120,153,170,.22)!important;border-radius:11px!important;
+  background:rgba(9,18,24,.48)!important;
+}
+#watchingPanel .watch-main-progress{background:#243632!important}
+#watchingPanel .watch-main-progress i{background:linear-gradient(90deg,#36bd99,#65e4c4)!important}
+#watchingPanel .watch-main-episodes button,
+#watchingPanel .watch-main-season-score,
+#watchingPanel #mrWatchLaterSection button,
+#watchingPanel #mr120HistoryDetails button{
+  border:1px solid rgba(120,153,170,.28)!important;border-radius:10px!important;
+  background:rgba(8,17,23,.62)!important;color:#d8e8e5!important;
+  transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease!important;
+}
+#watchingPanel .watch-main-episodes button:hover,
+#watchingPanel .watch-main-season-score:hover,
+#watchingPanel #mrWatchLaterSection button:hover,
+#watchingPanel #mr120HistoryDetails button:hover{
+  border-color:var(--mr-ui-accent-border)!important;background:rgba(73,214,177,.12)!important;color:#a5f4df!important;
+}
+#watchingPanel .watch-main-episodes button[data-next="1"]{
+  background:rgba(73,214,177,.12)!important;border-color:rgba(73,214,177,.55)!important;color:#a5f4df!important;
+}
+#watchingPanel .watch-main-season-score{padding:7px 11px!important;font-weight:800!important}
+#watchingPanel .watch-main-season-title{color:#e7f2f0!important}
+#watchingPanel .mr-watch-later-row{border-color:rgba(120,153,170,.22)!important;border-radius:12px!important;background:rgba(21,35,44,.72)!important}
+#watchingPanel .mr-watch-later-btn{border-color:rgba(73,214,177,.38)!important;background:rgba(73,214,177,.09)!important;color:#8ce6d0!important}
+#watchingPanel .watching-toggle-all{
+  border:1px solid rgba(73,214,177,.34)!important;border-radius:11px!important;
+  background:rgba(73,214,177,.09)!important;color:#8ce6d0!important;
+}
+#watchingPanel .watching-toggle-all:hover{background:rgba(73,214,177,.17)!important;border-color:#49d6b1!important}
+
+/* Puntuar nuevos: pestañas, filtros y tarjetas del catálogo. */
+#newModal .new-tabs{padding:5px!important;border:1px solid rgba(120,153,170,.2)!important;border-radius:14px!important;background:rgba(5,12,18,.42)!important}
+#newModal .new-tabs .tab{
+  min-height:40px!important;padding:8px 14px!important;border:1px solid transparent!important;border-radius:10px!important;
+  background:transparent!important;color:#9eb0bb!important;box-shadow:none!important;
+  transition:background .16s ease,border-color .16s ease,color .16s ease!important;
+}
+#newModal .new-tabs .tab:hover{background:rgba(255,255,255,.045)!important;color:#e6f4f1!important}
+#newModal .new-tabs .tab.active{
+  background:linear-gradient(135deg,rgba(55,205,168,.18),rgba(54,133,255,.07))!important;
+  border-color:rgba(66,218,181,.44)!important;color:#79e8ce!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.04)!important;
+}
+#newModal .icon-label::before,
+#newModal .minimal-action[data-icon]::before{filter:hue-rotate(95deg) saturate(1.35) drop-shadow(0 1px 2px rgba(73,214,177,.14))!important}
+#newModal .filter-field{
+  border-color:rgba(120,153,170,.24)!important;border-radius:13px!important;
+  background:linear-gradient(150deg,rgba(25,39,50,.92),rgba(17,28,37,.98))!important;
+}
+#newModal .filter-label{color:#a9c0c1!important}
+#newModal .filter-label-genre::before,
+#newModal .filter-label-year::before,
+#newModal .filter-label-quarter::before{
+  content:"";display:inline-block;width:15px;height:15px;margin-right:6px;vertical-align:-3px;
+  background-position:center;background-repeat:no-repeat;background-size:contain;opacity:.95;
+}
+#newModal .filter-label-genre::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z'/%3E%3Cpath d='m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z'/%3E%3C/svg%3E")}
+#newModal .filter-label-year::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='16' rx='2.5'/%3E%3Cpath d='M8 3v4M16 3v4M4 10h16M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01'/%3E%3C/svg%3E")}
+#newModal .filter-label-quarter::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2M12 3v2M21 12h-2'/%3E%3C/svg%3E")}
+#newModal .filters input,
+#newModal .filters select,
+#newModal .new-sort-control select{
+  border:1px solid rgba(120,153,170,.28)!important;border-radius:10px!important;
+  background:#0b151c!important;color:#e5f1ee!important;
+}
+#newModal .filters input:focus,
+#newModal .filters select:focus,
+#newModal .new-sort-control select:focus{outline:2px solid rgba(73,214,177,.22)!important;border-color:#49d6b1!important}
+#newModal .filter-clear,
+#newModal .reroll-button{
+  border:1px solid rgba(120,153,170,.28)!important;border-radius:11px!important;
+  background:rgba(18,31,40,.92)!important;color:#c5d9d6!important;
+}
+#newModal .filter-clear:hover,
+#newModal .reroll-button:hover{border-color:rgba(73,214,177,.48)!important;background:rgba(73,214,177,.1)!important;color:#a5f4df!important}
+#newModal .catalog-item,
+#newModal .random-card{
+  border:1px solid rgba(120,153,170,.23)!important;border-radius:14px!important;
+  background:linear-gradient(150deg,rgba(25,39,50,.92),rgba(17,28,37,.98))!important;
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease!important;
+}
+#newModal .catalog-item:hover,
+#newModal .random-card:hover{border-color:rgba(73,214,177,.42)!important;box-shadow:0 10px 24px rgba(0,0,0,.18),0 0 0 1px rgba(73,214,177,.08)!important}
+#newModal #loadMoreNew,
+#scoreModal #finishScore{border-radius:12px!important;background:linear-gradient(135deg,#49d6b1,#39c5a0)!important;border:1px solid #66e4c4!important;color:#07231c!important;box-shadow:0 7px 20px rgba(40,200,165,.14)!important}
+#newModal #loadMoreNew:hover,
+#scoreModal #finishScore:hover{filter:brightness(1.05)!important;transform:translateY(-1px)!important}
+
+/* Puntuar saga, temporada y capítulo: controles activos, cascadas e iconos. */
+#scoreModal .score-card{border-color:rgba(73,214,177,.28)!important;border-radius:16px!important;background:linear-gradient(150deg,#111d26,#0d171e)!important}
+#scoreModal .modal-head,
+#scoreModal .score-identity,
+#scoreModal .score-mode-buttons,
+#scoreModal .score-bottom{border-color:rgba(120,153,170,.2)!important}
+#scoreModal .modal-head h2::before{
+  content:"";display:inline-block;width:19px;height:19px;margin-right:8px;vertical-align:-4px;
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349d6b1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+}
+#scoreModal .score-mode-buttons{background:rgba(18,31,40,.78)!important}
+#scoreModal .score-mode-buttons button{
+  border-color:rgba(120,153,170,.25)!important;border-radius:12px!important;
+  background:linear-gradient(150deg,rgba(25,39,50,.92),rgba(17,28,37,.98))!important;
+}
+#scoreModal .score-mode-buttons button:hover{border-color:rgba(73,214,177,.4)!important;background:rgba(33,55,57,.92)!important}
+#scoreModal .score-mode-buttons button.active,
+#scoreModal .score-mode-buttons button.active[data-mode="episode"]{
+  background:linear-gradient(135deg,rgba(55,205,168,.2),rgba(54,133,255,.07))!important;
+  border-color:rgba(66,218,181,.55)!important;box-shadow:inset 0 0 0 1px rgba(73,214,177,.08)!important;
+}
+#scoreModal .score-mode-icon{
+  border-color:rgba(73,214,177,.3)!important;border-radius:9px!important;
+  background:rgba(73,214,177,.09)!important;color:#75e6c9!important;
+}
+#scoreModal .score-mode-buttons button.active .score-mode-icon{background:rgba(73,214,177,.18)!important;color:#9af2dc!important;border-color:rgba(73,214,177,.52)!important}
+#scoreModal .score-identity{background:linear-gradient(90deg,rgba(30,58,54,.32),rgba(13,24,30,.18))!important}
+#scoreModal .score-cover{border-color:rgba(73,214,177,.25)!important;border-radius:10px!important}
+#scoreModal .nickname-field input{border-color:rgba(120,153,170,.28)!important;border-radius:10px!important;background:#0b151c!important}
+#scoreModal .nickname-field input:focus{border-color:#49d6b1!important;box-shadow:0 0 0 3px rgba(73,214,177,.1)!important}
+#scoreModal .score-content-frame{background:rgba(9,18,24,.42)!important}
+#scoreModal .score-value{color:#70e5c6!important;text-shadow:0 8px 28px rgba(73,214,177,.16)!important}
+#scoreModal .season-picker-btn,
+#scoreModal .episode-picker-btn{
+  border:1px solid rgba(120,153,170,.26)!important;border-radius:11px!important;
+  background:linear-gradient(150deg,rgba(25,39,50,.9),rgba(17,28,37,.98))!important;
+}
+#scoreModal .season-picker-btn:hover,
+#scoreModal .episode-picker-btn:hover{border-color:rgba(73,214,177,.45)!important}
+#scoreModal .season-picker-btn.selected,
+#scoreModal .episode-picker-btn.selected{
+  border-color:rgba(73,214,177,.65)!important;background:rgba(73,214,177,.14)!important;
+  box-shadow:inset 0 0 0 1px rgba(73,214,177,.12)!important;
+}
+#scoreModal .season-picker-btn.rated:not(.selected),
+#scoreModal .episode-picker-btn.rated:not(.selected){border-color:rgba(73,214,177,.3)!important;background:rgba(73,214,177,.07)!important}
+#scoreModal .episode-chip{border-color:rgba(120,153,170,.26)!important;border-radius:9px!important;background:#0d171e!important}
+#scoreModal .episode-chip.next,
+#scoreModal .episode-chip.selected,
+#scoreModal .episode-inline-grid .episode-chip.selected{
+  border-color:#49d6b1!important;background:rgba(73,214,177,.16)!important;color:#a5f4df!important;
+  box-shadow:inset 0 0 0 1px rgba(73,214,177,.14)!important;
+}
+#scoreModal .score-buttons button{
+  border:1px solid rgba(120,153,170,.25)!important;border-radius:10px!important;
+  background:rgba(18,31,40,.96)!important;color:#dceae6!important;box-shadow:none!important;
+}
+#scoreModal .score-buttons button[data-delta^="-"]{color:#dceae6!important}
+#scoreModal .score-buttons button[data-delta="1"],
+#scoreModal .score-buttons button[data-delta="5"],
+#scoreModal .score-buttons button[data-delta="10"]{color:#a5f4df!important}
+#scoreModal .score-buttons button:hover{border-color:rgba(73,214,177,.46)!important;background:rgba(73,214,177,.11)!important;transform:translateY(-1px)!important}
+#scoreModal .share{border-color:rgba(120,153,170,.2)!important;background:rgba(9,18,24,.45)!important}
+#scoreModal .score-bottom{background:rgba(9,18,24,.8)!important}
+#scoreModal button:focus-visible,
+#newModal button:focus-visible,
+#watchingPanel button:focus-visible,
+#watchingPanel summary:focus-visible{outline:2px solid rgba(73,214,177,.72)!important;outline-offset:2px!important}
+</style>
+</body>
 </html>
