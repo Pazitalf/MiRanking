@@ -29,8 +29,6 @@
 <link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link crossorigin="" href="https://animap.id" rel="preconnect"/>
 <link crossorigin="" href="https://api.jikan.moe" rel="preconnect"/>
-<!-- Rendimiento: iniciar la descarga del catálogo antes de que el parser llegue al código de la aplicación. Debe coincidir con la URL del fetch de catalogReady. -->
-<link rel="preload" href="/catalog-ce2bc7c01079.json?v=20261020" as="fetch" crossorigin="anonymous"/>
 <!-- beta_1.201: optimizaciones conservadoras. Se conserva el orden de las capas CSS y los módulos JS. -->
 <!-- Mobile/WebView performance and safe-area fixes -->
 <style id="miranking-all-css">
@@ -3040,7 +3038,7 @@ const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261020', { cache: 'fo
     console.error('Error cargando el catálogo de MiRanking:', error);
     return CATALOG;
   })
-  .finally(() => { catalogLoaded = true; });
+  .finally(() => { catalogLoaded = true; });;
 let data=JSON.parse(JSON.stringify(INITIAL_RANKING));
 try{
  const saved=JSON.parse(localStorage.getItem(STORAGE)||'null');
@@ -3397,12 +3395,7 @@ async function fallbackJikanCover(name){
   const variants=coverVariants(name).slice(0,2);
   for(const v of variants){
     try{
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),3500);
-      let r;
-      try{
-        r=await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(v)}&limit=3&sfw=true`,{mode:'cors',cache:'no-store',signal:controller.signal});
-      }finally{clearTimeout(timeout)}
+      const r=await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(v)}&limit=3&sfw=true`,{mode:'cors',cache:'no-store'});
       if(!r.ok) continue;
       const j=await r.json();
       const items=Array.isArray(j?.data)?j.data:[];
@@ -3478,44 +3471,34 @@ async function resolveAllCovers(){
   const status=document.getElementById('coverStatus');
   const progress=document.getElementById('coverProgress');
   const loader=document.getElementById('coverLoader');
-  const imgs=[...document.querySelectorAll('img.thumb[data-anime-name]')];
-
-  // No descargar ni parsear el índice externo de ~1,8 MB cuando la vista aún
-  // no contiene tarjetas con portadas (caso habitual en una sesión nueva).
-  // Esto evita trabajo de red y JavaScript que no contribuye al primer pintado.
-  if(!imgs.length){
-    if(status)status.textContent='Las portadas se cargarán cuando haya animes para mostrar.';
-    if(progress)progress.style.width='100%';
-    if(loader)loader.classList.add('done');
-    return;
-  }
-
-  if(status) status.textContent='Preparando portadas…';
+  if(status) status.textContent='Cargando catálogo…';
   if(progress) progress.style.width='4%';
 
-  let found=0, done=0;
-  // Resolver primero las portadas ya guardadas. El índice externo solo se
-  // necesita si queda alguna tarjeta sin una URL conocida.
-  const unresolved=[];
-  for(const img of imgs){
-    const cached=coverFor(img.dataset.animeName||'');
-    if(cached){
-      img.dataset.status='found';
-      if(img.src!==cached)img.src=cached;
-      found++;
-    }else unresolved.push(img);
+  // El índice también enlaza títulos para agrupar temporadas, por eso se carga
+  // al inicio; las consultas más costosas de respaldo sí se limitan a lo cercano
+  // a la pantalla y se disparan cuando el usuario se desplaza.
+  let index=null;
+  try{
+    index=await loadCoverIndex();
+  }catch(e){
+    index=null;
   }
 
-  let index=null;
-  if(unresolved.length){
-    try{ index=await loadCoverIndex(); }catch(e){ index=null; }
-  }
+  const imgs=[...document.querySelectorAll('img.thumb[data-anime-name]')];
+  let found=0, done=0;
   const missing=[];
   const deferred=[];
   const viewportHeight=window.innerHeight||document.documentElement.clientHeight||800;
 
-  for(const img of unresolved){
+  for(const img of imgs){
     const name=img.dataset.animeName;
+    const cached=coverFor(name);
+    if(cached){
+      img.dataset.status='found';
+      img.src=cached;
+      found++;
+      continue;
+    }
     const hit=index ? pickCover(name,index) : null;
     if(hit?.image){
       setCoverImage(img,hit.image,name);
@@ -3577,9 +3560,8 @@ async function resolveAllCovers(){
   });
 
   for(const img of deferred)deferCoverFallback(img);
-  if(deferred.length){
-    refreshCoverLoaderStatus();
-  }else{
+  if(deferred.length)refreshCoverLoaderStatus();
+  else{
     if(status)status.textContent=`Portadas listas: ${found}/${imgs.length}`;
     if(progress)progress.style.width='100%';
     if(loader)loader.classList.add('done');
