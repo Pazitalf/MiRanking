@@ -5766,6 +5766,55 @@ body.mr-opinion-modal-open{overflow:hidden!important}
 
 
 
+
+<style id="miranking-puntuar-picker-fix">
+/* Fix selector de lanzamientos: evita que las portadas desborden el modal. */
+#scoreModal #seasonScoreSelector .season-picker-btn,
+#scoreModal #seasonScoreSelector button[data-episode-season]{
+  display:flex!important;align-items:center!important;gap:10px!important;
+  width:100%!important;height:auto!important;min-height:62px!important;
+  max-height:none!important;padding:7px 9px!important;margin:5px 0!important;
+  box-sizing:border-box!important;overflow:visible!important;text-align:left!important;
+}
+#scoreModal #seasonScoreSelector .season-picker-entry{
+  display:flex!important;align-items:center!important;gap:8px!important;
+  flex:1 1 auto!important;min-width:0!important;overflow:visible!important;
+}
+#scoreModal #seasonScoreSelector img.season-picker-cover{
+  display:block!important;width:38px!important;min-width:38px!important;
+  max-width:38px!important;height:52px!important;min-height:52px!important;
+  max-height:52px!important;object-fit:cover!important;flex:0 0 38px!important;
+  border-radius:6px!important;cursor:zoom-in!important;
+}
+#scoreModal #seasonScoreSelector .season-picker-text{
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+  justify-content:center!important;gap:5px!important;min-width:0!important;
+  white-space:normal!important;overflow:visible!important;
+}
+#scoreModal #seasonScoreSelector .season-picker-name{
+  display:block!important;font-size:11px!important;font-weight:800!important;
+  line-height:1.25!important;color:#e6f0f4!important;white-space:normal!important;
+  overflow-wrap:anywhere!important;text-overflow:clip!important;max-width:100%!important;
+}
+#scoreModal #seasonScoreSelector .season-picker-label{
+  display:inline-flex!important;width:max-content!important;max-width:100%!important;
+  min-height:20px!important;padding:3px 7px!important;border:1px solid transparent!important;
+  border-radius:6px!important;font-size:10px!important;font-weight:850!important;
+  line-height:1.2!important;white-space:normal!important;overflow:visible!important;
+}
+#scoreModal #seasonScoreSelector .season-picker-label.mr-release-kind-season{border-color:rgba(103,174,255,.55)!important;background:rgba(56,126,204,.2)!important;color:#b9dcff!important}
+#scoreModal #seasonScoreSelector .season-picker-label.mr-release-kind-spinoff{border-color:rgba(189,143,255,.58)!important;background:rgba(126,78,191,.22)!important;color:#dec6ff!important}
+#scoreModal #seasonScoreSelector .season-picker-label.mr-release-kind-ova{border-color:rgba(255,176,98,.6)!important;background:rgba(207,113,44,.22)!important;color:#ffd2a5!important}
+#scoreModal #seasonScoreSelector .season-picker-btn>b,
+#scoreModal #seasonScoreSelector .season-picker-btn>small{flex:0 0 auto!important;margin-left:auto!important;white-space:nowrap!important}
+#scoreModal #seasonScoreSelector .season-score-scroll{min-width:0!important;overflow-x:hidden!important}
+@media(max-width:600px){
+ #scoreModal #seasonScoreSelector .season-picker-btn{gap:7px!important;padding:6px!important}
+ #scoreModal #seasonScoreSelector img.season-picker-cover{width:32px!important;min-width:32px!important;max-width:32px!important;height:45px!important;min-height:45px!important;max-height:45px!important;flex-basis:32px!important}
+ #scoreModal #seasonScoreSelector .season-picker-name{font-size:10px!important}
+}
+</style>
+
 </body></html>`);
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print()}catch(e){}},250);
@@ -6644,7 +6693,8 @@ function seasonPickerReleaseMarkup(season){
   const coverName=entry?.name||selectedNew?.name||season?.name||'';
   const kind=catalogEntryReleaseKind(labelEntry);
   const label=catalogEntryReleaseLabel(labelEntry);
-  return `<span class="season-picker-entry"><img class="season-picker-cover" data-season-cover="${escDetail(coverName)}" alt="${escDetail('Portada de '+coverName)}"><span class="season-picker-label mr-release-kind-${kind}">${escDetail(label)}</span></span>`;
+  const releaseName=String(entry?.name||season?.name||coverName||'Lanzamiento');
+  return `<span class="season-picker-entry"><img class="season-picker-cover" data-season-cover="${escDetail(coverName)}" alt="${escDetail('Portada de '+coverName)}"><span class="season-picker-text"><span class="season-picker-name">${escDetail(releaseName)}</span><span class="season-picker-label mr-release-kind-${kind}">${escDetail(label)}</span></span></span>`;
 }
 function hydrateSeasonPickerCovers(box){
   box?.querySelectorAll('[data-season-cover]').forEach(img=>{
