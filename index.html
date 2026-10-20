@@ -7039,12 +7039,14 @@ showSagaMode();
     const d=getDetails(selectedNew.name),box=document.getElementById('seasonScoreSelector');
     box.style.display='block';document.getElementById('sagaScoreControls').style.display='flex';
     document.querySelector('#scoreModal .share')?.style.setProperty('display','none','important');
-    let h='<div class="season-score-scroll"><div class="season-picker-title">Elegí la temporada que querés puntuar</div>';
+    let h='<div class="season-score-scroll"><div class="season-picker-title">Elegí el lanzamiento que querés puntuar</div>';
     d.seasons.forEach((s,i)=>{
       const stored=effectiveSeasonScore(s),v=pendingSeasonScores[i]!=null?pendingSeasonScores[i]:stored;
-      h+=`<button type="button" class="season-picker-btn ${i===selectedSeasonIndex?'selected':''} ${v!=null?'rated':''}" data-season-pick="${i}"><span>${escDetail(s.name)}</span><b>${v==null?'70':clampScore(v)}</b></button>`;
+      h+=`<button type="button" class="season-picker-btn ${i===selectedSeasonIndex?'selected':''} ${v!=null?'rated':''}" data-season-pick="${i}">${seasonPickerReleaseMarkup(s)}<b>${v==null?'70':clampScore(v)}</b></button>`;
     });
     h+='</div>';box.innerHTML=h;
+    // Las portadas se cargan dentro del selector de Puntuar y al tocarlas se amplían.
+    hydrateSeasonPickerCovers(box);
     box.querySelectorAll('[data-season-pick]').forEach(b=>b.addEventListener('click',()=>{
       selectedSeasonIndex=Number(b.dataset.seasonPick);
       const s=d.seasons[selectedSeasonIndex];
