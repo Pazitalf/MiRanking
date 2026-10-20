@@ -1,0 +1,8 @@
+# MiRanking
+
+> MiRanking es una aplicación web para explorar animes y organizar un ranking personal mediante puntuaciones.
+
+## Sitio
+- [MiRanking](https://miranking.com.ar/): Aplicación principal para consultar el catálogo y gestionar tu ranking personal.
+- [Catálogo de anime](https://miranking.com.ar/catalog-ce2bc7c01079.json): Catálogo público de anime utilizado por la aplicación.
+- [Manifiesto de descubrimiento de capacidades de IA](https://miranking.com.ar/ai-catalog.json): Manifiesto JSON para el descubrimiento automatizado de recursos.
