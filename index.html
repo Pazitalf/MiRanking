@@ -29,6 +29,8 @@
 <link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link crossorigin="" href="https://animap.id" rel="preconnect"/>
 <link crossorigin="" href="https://api.jikan.moe" rel="preconnect"/>
+<!-- Rendimiento: iniciar la descarga del catálogo antes de que el parser llegue al código de la aplicación. Debe coincidir con la URL del fetch de catalogReady. -->
+<link rel="preload" href="/catalog-ce2bc7c01079.json?v=20261020" as="fetch" crossorigin="anonymous" fetchpriority="high"/>
 <!-- beta_1.201: optimizaciones conservadoras. Se conserva el orden de las capas CSS y los módulos JS. -->
 <!-- Mobile/WebView performance and safe-area fixes -->
 <style id="miranking-all-css">
@@ -3038,7 +3040,7 @@ const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261020', { cache: 'fo
     console.error('Error cargando el catálogo de MiRanking:', error);
     return CATALOG;
   })
-  .finally(() => { catalogLoaded = true; });;
+  .finally(() => { catalogLoaded = true; });
 let data=JSON.parse(JSON.stringify(INITIAL_RANKING));
 try{
  const saved=JSON.parse(localStorage.getItem(STORAGE)||'null');
