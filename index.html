@@ -8871,7 +8871,53 @@ async function socialSyncProfile(){if(!sb||!session?.user)return false;const p=s
       return `<div class="social-anime-row"><div class="social-anime-pos">#${i+1}</div><img class="social-anime-cover" src="${socialEsc(cover)}" alt=""><div class="social-anime-info"><div class="social-anime-name">${socialEsc(n)}</div><div class="social-anime-meta">${x.votes} voto${x.votes===1?'':'s'} · media ${x.rawScore.toFixed(1)}</div></div><div class="social-score"><b>${x.score.toFixed(1)}</b><small>Ajustada</small></div></div>`
     }).join(''):`<div class="social-empty">No hay animes que cumplan los filtros.</div>`;
   }
-  async function socialSearchUsers(){const q=String($('socialUserSearch')?.value||'').trim();const el=$('socialUserResults');if(!el||!sb)return;if(q.length<2){el.innerHTML='<div class="social-empty">Escribí al menos 2 caracteres.</div>';return}const r=await sb.from(SOCIAL_TABLES.profiles).select('id,username,display_name,avatar,bio,watched_count').or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).limit(20);if(r.error){el.innerHTML=`<div class="social-empty">${socialEsc(r.error.message)}</div>`;return}const foundRows=r.data||[];if(window.miRankingBadges)await window.miRankingBadges.load(foundRows.map(p=>p.id),foundRows);const uid=socialUserId(),friends=socialCache.friends||[],followingIds=new Set((socialCache.following||[]).map(x=>x.following_id));el.innerHTML=foundRows.filter(p=>p.id!==uid&&!socialIsBlocked(p.id)).map(p=>{const rel=friends.find(f=>(f.requester_id===uid&&f.receiver_id===p.id)||(f.receiver_id===uid&&f.requester_id===p.id));let action=`<button type="button" data-social-add="${socialEsc(p.id)}">Agregar</button>`;if(rel?.status==='accepted')action='<button type="button" disabled>Amigos</button>';else if(rel?.status==='pending'&&rel.requester_id===uid)action='<button type="button" disabled>Solicitud enviada</button>';else if(rel?.status==='pending')action=`<button type="button" data-social-accept="${socialEsc(rel.id)}">Aceptar</button>`;const follow=followingIds.has(p.id)?`<button type="button" data-social-unfollow="${socialEsc(p.id)}">Siguiendo</button>`:`<button type="button" data-social-follow="${socialEsc(p.id)}">Seguir</button>`;return `<div class="social-user">${socialUserBlock(p)}<div class="social-actions">${action}${follow}<button type="button" data-social-view="${socialEsc(p.id)}">Ver perfil</button></div></div>`}).join('')||'<div class="social-empty">No se encontraron usuarios.</div>'}
+  let socialUserSearchToken=0;
+  async function socialSearchUsers(){
+    const input=$('socialUserSearch'),el=$('socialUserResults');
+    if(!el)return;
+    if(!sb){el.innerHTML='<div class="social-empty">No se pudo conectar con Supabase. Cerrá y abrí MiRanking e intentá de nuevo.</div>';return;}
+    // Admite búsquedas por nombre o usuario, incluso si se escribe @usuario.
+    const q=String(input?.value||'').trim().replace(/^@+/, '').replace(/\s+/g,' ');
+    const token=++socialUserSearchToken;
+    if(q.length<2){el.innerHTML='<div class="social-empty">Escribí al menos 2 caracteres.</div>';return;}
+    el.innerHTML='<div class="social-empty">Buscando usuarios…</div>';
+    try{
+      // Dos consultas separadas evitan que caracteres como comas o paréntesis
+      // rompan la sintaxis del filtro .or() de PostgREST.
+      const columns='id,username,display_name,avatar,bio,watched_count';
+      const [byUsername,byName]=await Promise.all([
+        sb.from(SOCIAL_TABLES.profiles).select(columns).ilike('username',`%${q}%`).limit(20),
+        sb.from(SOCIAL_TABLES.profiles).select(columns).ilike('display_name',`%${q}%`).limit(20)
+      ]);
+      if(token!==socialUserSearchToken)return;
+      const err=byUsername.error||byName.error;
+      if(err){
+        console.error('MiRanking: error buscando usuarios',err);
+        el.innerHTML=`<div class="social-empty">No se pudieron buscar usuarios: ${socialEsc(err.message||'Error de consulta')}${err.code?` (${socialEsc(err.code)})`:''}. Si persiste, hay que revisar los permisos SELECT de la tabla de perfiles en Supabase.</div>`;
+        return;
+      }
+      const merged=new Map();
+      [...(byUsername.data||[]),...(byName.data||[])].forEach(p=>{if(p?.id)merged.set(String(p.id),p)});
+      const foundRows=[...merged.values()];
+      if(window.miRankingBadges)await window.miRankingBadges.load(foundRows.map(p=>p.id),foundRows);
+      if(token!==socialUserSearchToken)return;
+      const uid=socialUserId(),friends=socialCache.friends||[],followingIds=new Set((socialCache.following||[]).map(x=>x.following_id));
+      const visible=foundRows.filter(p=>String(p.id)!==String(uid)&&!socialIsBlocked(p.id));
+      el.innerHTML=visible.map(p=>{
+        const rel=friends.find(f=>(String(f.requester_id)===String(uid)&&String(f.receiver_id)===String(p.id))||(String(f.receiver_id)===String(uid)&&String(f.requester_id)===String(p.id)));
+        let action=`<button type="button" data-social-add="${socialEsc(p.id)}">Agregar</button>`;
+        if(rel?.status==='accepted')action='<button type="button" disabled>Amigos</button>';
+        else if(rel?.status==='pending'&&String(rel.requester_id)===String(uid))action='<button type="button" disabled>Solicitud enviada</button>';
+        else if(rel?.status==='pending')action=`<button type="button" data-social-accept="${socialEsc(rel.id)}">Aceptar</button>`;
+        const follow=followingIds.has(p.id)?`<button type="button" data-social-unfollow="${socialEsc(p.id)}">Siguiendo</button>`:`<button type="button" data-social-follow="${socialEsc(p.id)}">Seguir</button>`;
+        return `<div class="social-user">${socialUserBlock(p)}<div class="social-actions">${action}${follow}<button type="button" data-social-view="${socialEsc(p.id)}">Ver perfil</button></div></div>`;
+      }).join('')||'<div class="social-empty">No se encontraron usuarios.</div>';
+    }catch(err){
+      if(token!==socialUserSearchToken)return;
+      console.error('MiRanking: excepción buscando usuarios',err);
+      el.innerHTML=`<div class="social-empty">Falló la búsqueda: ${socialEsc(err?.message||'Error inesperado')}. Revisá la conexión y los permisos de perfiles en Supabase.</div>`;
+    }
+  }
   async function socialAddFriend(id){
     const targetId=String(id||'').trim();
     try{
