@@ -3024,7 +3024,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261020', { cache: 'force-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261024', { cache: 'force-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
