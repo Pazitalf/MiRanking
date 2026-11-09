@@ -8443,7 +8443,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   function getProfile(){const p=(typeof appPrefs==='object'&&appPrefs?.profile&&typeof appPrefs.profile==='object')?appPrefs.profile:{};return {displayName:String(p.displayName||'').trim(),bio:String(p.bio||''),favorite:String(p.favorite||''),avatar:String(p.avatar||'')}}
   function profileName(){const p=getProfile();return p.displayName||normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'')||'Usuario'}
   function updateAccountUI(){const username=normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'');const visible=profileName();const el=$('mirAccountUsername');if(el)el.textContent=visible;const avatar=$('mirAccountAvatar');if(avatar){avatar.innerHTML='';const p=getProfile();if(p.avatar){const im=document.createElement('img');im.src=p.avatar;im.alt='';im.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit';avatar.appendChild(im)}else avatar.textContent=visible.charAt(0).toUpperCase()}const label=$('mirAccountLabel');if(label)label.textContent=tx('user');const st=$('mirAccountState');if(st)st.textContent=authUser?tx('connected'):tx('logged');applyAuthLanguage();updateCornerAvatar()}
-  function updateCornerAvatar(){const b=$('mirUserCorner');if(!b)return;const loggedIn=!!(session?.user||authUser),name=loggedIn?(profileName()||tx('user')):tx('login'),p=getProfile();b.innerHTML='';const avatar=document.createElement('span');avatar.className='mir-user-corner-avatar';avatar.setAttribute('aria-hidden','true');if(loggedIn&&p.avatar){const im=document.createElement('img');im.className='mir-user-corner-image';im.src=p.avatar;im.alt='';avatar.appendChild(im)}else avatar.textContent=String(name).charAt(0).toUpperCase()||'?';b.appendChild(avatar);const label=document.createElement('span');label.className='mir-user-corner-label';label.id='mirUserCornerLabel';label.textContent=name;b.appendChild(label);const ownBadge=loggedIn?(window.miRankingBadges?.html?.(authUser?.id||session?.user?.id)||''):'';if(ownBadge){const badgeWrap=document.createElement('span');badgeWrap.className='mir-user-corner-badge';badgeWrap.innerHTML=ownBadge;const badgeNodes=[...badgeWrap.querySelectorAll('.mr121-badge')];if(badgeNodes.length>1){const labels=[...new Set(badgeNodes.map(x=>x.getAttribute('aria-label')||x.getAttribute('title')||'').filter(Boolean))];const titles=[...new Set(badgeNodes.map(x=>x.getAttribute('title')||'').filter(Boolean))];if(titles.length)badgeNodes[0].setAttribute('title',titles.join(' · '));if(labels.length)badgeNodes[0].setAttribute('aria-label',labels.join(' · '));badgeNodes.slice(1).forEach(x=>x.remove())}b.appendChild(badgeWrap)}const dot=document.createElement('span');dot.className='mir-user-corner-status';dot.setAttribute('aria-hidden','true');dot.hidden=!loggedIn;b.appendChild(dot);b.classList.toggle('offline',loggedIn&&!navigator.onLine);b.classList.toggle('error',loggedIn&&readSyncMeta().lastError===true);b.title=name;b.setAttribute('aria-label',name);b.setAttribute('aria-haspopup',loggedIn?'menu':'dialog');const mn=$('mirUserMenuName');if(mn)mn.textContent=name;const ms=$('mirUserMenuState');if(ms)ms.textContent=loggedIn?tx('connected'):tx('logged')}
+  function updateCornerAvatar(){const b=$('mirUserCorner');if(!b)return;const loggedIn=!!(session?.user||authUser),name=loggedIn?(profileName()||tx('user')):tx('login'),p=getProfile();b.innerHTML='';const avatar=document.createElement('span');avatar.className='mir-user-corner-avatar';avatar.setAttribute('aria-hidden','true');if(loggedIn&&p.avatar){const im=document.createElement('img');im.className='mir-user-corner-image';im.src=p.avatar;im.alt='';avatar.appendChild(im)}else avatar.textContent=String(name).charAt(0).toUpperCase()||'?';b.appendChild(avatar);const label=document.createElement('span');label.className='mir-user-corner-label';label.id='mirUserCornerLabel';label.textContent=name;b.appendChild(label);const ownBadge=loggedIn?(window.miRankingBadges?.html?.(authUser?.id||session?.user?.id)||''):'';if(ownBadge){const badgeWrap=document.createElement('span');badgeWrap.className='mir-user-corner-badge';badgeWrap.innerHTML=ownBadge;b.appendChild(badgeWrap)}const dot=document.createElement('span');dot.className='mir-user-corner-status';dot.setAttribute('aria-hidden','true');dot.hidden=!loggedIn;b.appendChild(dot);b.classList.toggle('offline',loggedIn&&!navigator.onLine);b.classList.toggle('error',loggedIn&&readSyncMeta().lastError===true);b.title=name;b.setAttribute('aria-label',name);b.setAttribute('aria-haspopup',loggedIn?'menu':'dialog');const mn=$('mirUserMenuName');if(mn)mn.textContent=name;const ms=$('mirUserMenuState');if(ms)ms.textContent=loggedIn?tx('connected'):tx('logged')}
   function setUserMenu(open){const menu=$('mirUserMenu'),btn=$('mirUserCorner');if(!menu||!btn)return;menu.classList.toggle('open',open);menu.setAttribute('aria-hidden',open?'false':'true');btn.setAttribute('aria-expanded',open?'true':'false')}
   async function afterAuthenticated(isNew){
     closeWelcomeTour(false);
@@ -8490,7 +8490,9 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
     wrapPersistence();
     updateAccountUI();
     hideOverlay();
-    setTimeout(async()=>{try{if(typeof socialSyncProfile==='function')await socialSyncProfile();if(isNew&&$('mirAuthTerms')?.checked&&typeof socialUserId==='function'&&session?.user){const now=new Date().toISOString();await sb.from(SOCIAL_TABLES.profiles).update({terms_accepted_at:now,updated_at:now}).eq('id',session.user.id)}if(typeof socialLoadCommunityState==='function')await socialLoadCommunityState();if(typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social initial sync',e)}},700);
+    // Las insignias se consultan cuando ya existe sesión y perfil cargado.
+    if(window.miRankingBadges?.decorateAll) setTimeout(()=>window.miRankingBadges.decorateAll(),0);
+    setTimeout(async()=>{try{if(typeof socialSyncProfile==='function')await socialSyncProfile();if(window.miRankingBadges?.decorateAll)await window.miRankingBadges.decorateAll();if(isNew&&$('mirAuthTerms')?.checked&&typeof socialUserId==='function'&&session?.user){const now=new Date().toISOString();await sb.from(SOCIAL_TABLES.profiles).update({terms_accepted_at:now,updated_at:now}).eq('id',session.user.id)}if(typeof socialLoadCommunityState==='function')await socialLoadCommunityState();if(typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social initial sync',e)}},700);
     [1800,3500,6000].forEach(delay=>setTimeout(async()=>{try{if(authReady&&session?.user&&typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social retry',e)}},delay));
     try{document.getElementById('navRanking')?.click()}catch(e){}
     if(isNew){msg(tx('created'),'ok');setTimeout(()=>msg(''),1200)}
@@ -10405,9 +10407,7 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
             await loadBadges([uid],[own.data]);
             // updateCornerAvatar ya crea el contenedor de insignias del usuario.
             // Reutilizarlo evita insertar una segunda insignia al guardar el perfil.
-            const corner=document.getElementById('mirUserCorner');
-            const holder=corner?.querySelector('.mir-user-corner-badge');
-            if(holder)holder.innerHTML=badgeHtml(uid);
+            if(typeof updateCornerAvatar==='function') updateCornerAvatar();
           }
         }
         const root=document.getElementById('socialReviewsList');
@@ -12129,5 +12129,48 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
 }
 @media(max-width:390px){
   #mirTopBanner #mirUserCorner{width:min(250px,66vw)!important;max-width:250px!important}
+}
+</style>
+
+
+<style id="miranking-profile-content-width">
+#mirTopBanner #mirUserCorner{
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  width:max-content!important;
+  min-width:0!important;
+  max-width:min(560px,calc(100vw - 48px))!important;
+  flex:0 1 auto!important;
+  gap:9px!important;
+  padding-right:14px!important;
+}
+#mirTopBanner #mirUserCorner .mir-user-corner-avatar{flex:0 0 36px!important}
+#mirTopBanner #mirUserCorner .mir-user-corner-label{
+  flex:0 1 auto!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+}
+#mirTopBanner #mirUserCorner .mir-user-corner-badge,
+#mirTopBanner #mirUserCorner .mr121-badge-row{
+  display:inline-flex!important;
+  align-items:center!important;
+  flex:0 0 auto!important;
+  gap:4px!important;
+  white-space:nowrap!important;
+}
+@media(max-width:760px){
+  #mirTopBanner #mirUserCorner{
+    width:max-content!important;
+    max-width:min(420px,calc(100vw - 24px))!important;
+  }
+  #mirTopBanner #mirUserCorner .mir-user-corner-label{
+    min-width:0!important;
+    max-width:clamp(70px,35vw,190px)!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
 }
 </style>
