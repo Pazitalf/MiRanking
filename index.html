@@ -8520,7 +8520,31 @@ $('mirAuthTabLogin')?.addEventListener('click',()=>setMode('login'));$('mirAuthT
     }
   }
 
-  $('mirLogoutSettings')?.addEventListener('click',async()=>{if(readSyncMeta().dirty&&!navigator.onLine){msg(tx('offline'),'error');return}const ok=await upsertCloudNow();if(!ok&&readSyncMeta().dirty){msg(tx('syncError'),'error');return}try{if(sb?.auth)await sb.auth.signOut()}catch(e){console.error(e);return}authReady=false;session=null;authUser=null;localStorage.removeItem(AUTH_LOCAL+'-username');hideOverlay();updateAccountUI();$('mirAuthPassword').value='';$('mirAuthPassword2').value='';msg('')});
+  function clearLocalUserDataAfterLogout(){
+    // Se eliminan únicamente los datos locales asociados al ranking de esta sesión.
+    // Las preferencias visuales/idioma y las cachés de portadas no se tocan.
+    const keys=[
+      STORAGE,
+      DETAIL_STORAGE,
+      (typeof STORAGE==='string'?STORAGE:'mi-ranking')+'-watch-meta-v1',
+      (typeof STORAGE==='string'?STORAGE:'mi-ranking')+'-random-v3',
+      (typeof STORAGE==='string'?STORAGE:'mi-ranking')+'-last-new-tab',
+      AUTH_LOCAL+'-username',
+      SYNC_META_KEY
+    ];
+    for(const key of keys){if(typeof key==='string'&&key){try{localStorage.removeItem(key)}catch(e){console.warn('MiRanking logout cleanup',key,e)}}}
+  }
+  $('mirLogoutSettings')?.addEventListener('click',async()=>{
+    if(readSyncMeta().dirty&&!navigator.onLine){msg(tx('offline'),'error');return}
+    const ok=await upsertCloudNow();
+    if(!ok&&readSyncMeta().dirty){msg(tx('syncError'),'error');return}
+    try{if(sb?.auth)await sb.auth.signOut()}catch(e){console.error(e);return}
+    // Primero se confirma la sincronización y se cierra la sesión; recién entonces
+    // se limpia el almacenamiento local para que el siguiente visitante vea un espacio vacío.
+    clearLocalUserDataAfterLogout();
+    authReady=false;session=null;authUser=null;
+    location.reload();
+  });
   const toggleUserMenu=(ev)=>{ev.stopPropagation();if(!session?.user&&!authUser){setUserMenu(false);setMode('login');showOverlay();return}const menu=$('mirUserMenu');setUserMenu(!menu?.classList.contains('open'))};
   $('mirUserCorner')?.addEventListener('click',toggleUserMenu);
   $('mirUserCornerName')?.addEventListener('click',toggleUserMenu);
