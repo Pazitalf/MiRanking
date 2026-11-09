@@ -10354,7 +10354,14 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
         const uid=String(session?.user?.id||authUser?.id||'');
         if(uid&&sb){
           const own=await sb.from(SOCIAL_TABLES.profiles).select('id,watched_count').eq('id',uid).maybeSingle();
-          if(!own.error&&own.data){await loadBadges([uid],[own.data]);const label=document.getElementById('mirUserCornerLabel');if(label){let holder=document.getElementById('mr121-own-corner-badge');if(!holder){holder=document.createElement('span');holder.id='mr121-own-corner-badge';holder.style.cssText='display:inline-flex;align-items:center;flex:0 0 auto;margin-left:5px;';label.insertAdjacentElement('afterend',holder)}holder.innerHTML=badgeHtml(uid)}}
+          if(!own.error&&own.data){
+            await loadBadges([uid],[own.data]);
+            // updateCornerAvatar ya crea el contenedor de insignias del usuario.
+            // Reutilizarlo evita insertar una segunda insignia al guardar el perfil.
+            const corner=document.getElementById('mirUserCorner');
+            const holder=corner?.querySelector('.mir-user-corner-badge');
+            if(holder)holder.innerHTML=badgeHtml(uid);
+          }
         }
         const root=document.getElementById('socialReviewsList');
         if(root&&sb){
