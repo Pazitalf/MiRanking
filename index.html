@@ -3791,60 +3791,98 @@ function closeCoverViewer(){
   document.body.classList.remove('cover-viewer-open');
 }
 
+let rankingRenderToken = 0;
 function render(){
+ const token=++rankingRenderToken;
  document.querySelectorAll('img.thumb.expanded').forEach(img=>img.classList.remove('expanded'));
- syncSagaScores();
  const emptyStart=document.getElementById('emptyStartScore');
  const hasScoredAnime=Array.isArray(data)&&data.some(x=>{
    const score=Number(x?.score);
    return Number.isFinite(score)&&score>0;
  });
  if(emptyStart) emptyStart.style.setProperty('display',hasScoredAnime?'none':'block','important');
- const q=document.getElementById('search').value.trim().toLowerCase();
+ const search=document.getElementById('search');
+ const q=search?search.value.trim().toLowerCase():'';
  const root=document.getElementById('groups');
- root.innerHTML='';
+ if(!root)return;
+ root.replaceChildren();
  let visible=0;
-
- // Agrupamos una sola vez. Antes se hacía data.filter() dos veces por cada
- // puntuación existente, lo que obligaba al móvil a recorrer todo el ranking
- // repetidamente mientras el usuario buscaba.
  const grouped=new Map();
  data.forEach((x,idx)=>{
    const score=Number(x.score);
    if(!grouped.has(score))grouped.set(score,[]);
    grouped.get(score).push({x,idx});
  });
- const groups=[...grouped.keys()].sort((a,b)=>b-a);
-
- for(const score of groups){
+ const scores=[...grouped.keys()].sort((a,b)=>b-a);
+ const jobs=[];
+ const rowsByScore=new Map();
+ for(const score of scores){
    const entries=grouped.get(score)||[];
-   const matches=q
-     ? entries.filter(({x})=>String(x.name||'').toLowerCase().includes(q))
-     : entries;
-   if(!matches.length) continue;
+   const matches=q?entries.filter(({x})=>String(x.name||'').toLowerCase().includes(q)):entries;
+   if(!matches.length)continue;
    visible+=matches.length;
-   const d=makeScoreGroup(score,true), rows=d.querySelector('.rows'), c=color(score);
-   matches.forEach(({x,idx})=>{
+   const group=makeScoreGroup(score,true);
+   const rows=group.querySelector('.rows');
+   rowsByScore.set(score,rows);
+   root.appendChild(group);
+   for(const item of matches)jobs.push({...item,score});
+ }
+ const totalEl=document.getElementById('total'), visibleEl=document.getElementById('visible');
+ const maxEl=document.getElementById('max'), minEl=document.getElementById('min');
+ if(totalEl)totalEl.textContent=data.length;
+ if(visibleEl)visibleEl.textContent=visible;
+ if(data.length){
+   let max=-Infinity,min=Infinity;
+   for(const x of data){const n=Number(x.score);if(n>max)max=n;if(n<min)min=n;}
+   if(maxEl)maxEl.textContent=String(max);
+   if(minEl)minEl.textContent=String(min);
+ }else{
+   if(maxEl)maxEl.textContent='—';
+   if(minEl)minEl.textContent='—';
+ }
+ let cursor=0;
+ const batchSize=35;
+ const paintBatch=()=>{
+   if(token!==rankingRenderToken)return;
+   const stop=Math.min(cursor+batchSize,jobs.length);
+   for(;cursor<stop;cursor++){
+     const {x,idx,score}=jobs[cursor];
+     const rows=rowsByScore.get(score);
+     if(!rows)continue;
      const row=document.createElement('div'); row.className='row';
      row.dataset.name=x.name;
      const avgBadge=scoreComesFromAverage(x.name,x)?`<span class="average-badge" title="P = puntuación obtenida por promedio" aria-label="Puntuación obtenida por promedio">P</span>`:'';
      row.innerHTML=`<div class="rk"></div>
        <img class="thumb" alt="" loading="lazy" referrerpolicy="no-referrer" data-anime-name="">
-       <div><div class="row-name-wrap"><div class="name"></div>${avgBadge}<button class="hidden-gem-btn ${window.isMiRankingHiddenGem?.(x.name)?'active':''}" data-hidden-gem="${socialSafeSagaId(x.name)}" title="Marcar como joya oculta" aria-label="Marcar como joya oculta">💎</button><button class="main-opinion-btn" data-main-opinion="${socialSafeSagaId(x.name)}" title="Dar opinión" aria-label="Dar opinión">💬</button><button class="nickname-edit" data-i="${idx}" title="Editar sobrenombre" aria-label="Editar sobrenombre">✏️</button><button class="nickname-edit delete-entry" data-i="${idx}" title="Eliminar del ranking" aria-label="Eliminar del ranking">🗑️</button></div><div class="nickname-label"></div><div class="mini"><div class="fill" style="width:${x.score}%;background:${c}"></div></div></div>
+       <div><div class="row-name-wrap"><div class="name"></div>${avgBadge}<button class="hidden-gem-btn ${window.isMiRankingHiddenGem?.(x.name)?'active':''}" data-hidden-gem="${socialSafeSagaId(x.name)}" title="Marcar como joya oculta" aria-label="Marcar como joya oculta">💎</button><button class="main-opinion-btn" data-main-opinion="${socialSafeSagaId(x.name)}" title="Dar opinión" aria-label="Dar opinión">💬</button><button class="nickname-edit" data-i="${idx}" title="Editar sobrenombre" aria-label="Editar sobrenombre">✏️</button><button class="nickname-edit delete-entry" data-i="${idx}" title="Eliminar del ranking" aria-label="Eliminar del ranking">🗑️</button></div><div class="nickname-label"></div><div class="mini"><div class="fill" style="width:${x.score}%;background:${color(score)}"></div></div></div>
        <div class="actions"><button class="arrow down" data-i="${idx}" title="Restar 1 punto" aria-label="Restar 1 punto">↓</button><button class="arrow up" data-i="${idx}" title="Sumar 1 punto" aria-label="Sumar 1 punto">↑</button></div>`;
      row.querySelector('.name').textContent=displayName(x);
      row.querySelector('.nickname-label').textContent=x.nickname?`(${x.nickname})`:'';
-     const img=row.querySelector('img'); img.classList.remove('expanded'); img.alt='Portada de '+x.name; img.dataset.animeName=x.name; img.decoding='async'; img.fetchPriority='low';
-     rows.appendChild(row); getImage(x.name,img);
-   });
-   root.appendChild(d);
- }
- updateRankingGroupMeta();
- const totalEl=document.getElementById('total'), visibleEl=document.getElementById('visible'), maxEl=document.getElementById('max'), minEl=document.getElementById('min');
- if(totalEl) totalEl.textContent=data.length;
- if(visibleEl) visibleEl.textContent=visible;
- if(maxEl) maxEl.textContent=data.length?Math.max(...data.map(x=>x.score)):'—';
- if(minEl) minEl.textContent=data.length?Math.min(...data.map(x=>x.score)):'—';
+     const img=row.querySelector('img');
+     img.alt='Portada de '+x.name;
+     img.dataset.animeName=x.name;
+     img.decoding='async';
+     img.fetchPriority='low';
+     rows.appendChild(row);
+     // Resolver portadas fuera del lote crítico de construcción del DOM.
+     const resolve=()=>{if(token===rankingRenderToken&&img.isConnected)getImage(x.name,img);};
+     if('requestIdleCallback' in window)window.requestIdleCallback(resolve,{timeout:1200});
+     else setTimeout(resolve,0);
+   }
+   if(cursor<jobs.length){
+     if('requestAnimationFrame' in window)requestAnimationFrame(paintBatch);
+     else setTimeout(paintBatch,0);
+   }else{
+     if(token!==rankingRenderToken)return;
+     updateRankingGroupMeta();
+     root.dataset.renderComplete='true';
+     root.dispatchEvent(new CustomEvent('rankingrendercomplete',{bubbles:false,detail:{count:jobs.length}}));
+   }
+ };
+ root.dataset.renderComplete=jobs.length===0?'true':'false';
+ if(jobs.length===0){updateRankingGroupMeta();return;}
+ if('requestAnimationFrame' in window)requestAnimationFrame(paintBatch);
+ else setTimeout(paintBatch,0);
 }
 function fastScoreChange(i,delta){
  const btn=document.querySelector(`#groups button.arrow[data-i="${i}"]`);
