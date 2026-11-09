@@ -9342,34 +9342,68 @@ let socialProfileSyncErrorMessage='';
     if(!session?.user){document.getElementById('mirUserCorner')?.click();return}
     if(!sb)return;
     const uid=socialUserId();
-    const btn=document.querySelector(`[data-global-like="${CSS.escape(String(reviewId))}"]`);
-    if(btn)btn.disabled=true;
-    const existing=await sb.from(SOCIAL_TABLES.likes).select('review_id').eq('review_id',reviewId).eq('user_id',uid).maybeSingle();
-    if(existing.error){console.warn(existing.error);if(btn)btn.disabled=false;return}
-    const willLike=!existing.data;
-    const r=willLike
-      ?await sb.from(SOCIAL_TABLES.likes).insert({review_id:reviewId,user_id:uid})
-      :await sb.from(SOCIAL_TABLES.likes).delete().eq('review_id',reviewId).eq('user_id',uid);
-    if(r.error){console.warn('MiRanking social like',r.error);if(btn)btn.disabled=false;return}
-    if(btn){btn.classList.toggle('active',willLike);btn.disabled=false}
-    await socialUpdateGlobalReactionButton(reviewId,'like');
+    const likeBtn=document.querySelector(`[data-global-like="${CSS.escape(String(reviewId))}"]`);
+    const dislikeBtn=document.querySelector(`[data-global-dislike="${CSS.escape(String(reviewId))}"]`);
+    if(likeBtn)likeBtn.disabled=true;
+    if(dislikeBtn)dislikeBtn.disabled=true;
+    try{
+      const existing=await sb.from(SOCIAL_TABLES.likes).select('review_id').eq('review_id',reviewId).eq('user_id',uid).maybeSingle();
+      if(existing.error)throw existing.error;
+      const willLike=!existing.data;
+      if(willLike){
+        // Una cuenta no puede mantener like y dislike simultáneos en la misma opinión.
+        const removeOpposite=await sb.from(SOCIAL_TABLES.dislikes).delete().eq('review_id',reviewId).eq('user_id',uid);
+        if(removeOpposite.error)throw removeOpposite.error;
+        const insert=await sb.from(SOCIAL_TABLES.likes).insert({review_id:reviewId,user_id:uid});
+        if(insert.error)throw insert.error;
+      }else{
+        const remove=await sb.from(SOCIAL_TABLES.likes).delete().eq('review_id',reviewId).eq('user_id',uid);
+        if(remove.error)throw remove.error;
+      }
+      likeBtn?.classList.toggle('active',willLike);
+      dislikeBtn?.classList.remove('active');
+    }catch(e){
+      console.warn('MiRanking social like',e);
+    }finally{
+      if(likeBtn)likeBtn.disabled=false;
+      if(dislikeBtn)dislikeBtn.disabled=false;
+      await socialUpdateGlobalReactionButton(reviewId,'like');
+      await socialUpdateGlobalReactionButton(reviewId,'dislike');
+    }
   }
 
   async function socialToggleDislike(reviewId){
     if(!session?.user){document.getElementById('mirUserCorner')?.click();return}
     if(!sb)return;
     const uid=socialUserId();
-    const btn=document.querySelector(`[data-global-dislike="${CSS.escape(String(reviewId))}"]`);
-    if(btn)btn.disabled=true;
-    const existing=await sb.from(SOCIAL_TABLES.dislikes).select('review_id').eq('review_id',reviewId).eq('user_id',uid).maybeSingle();
-    if(existing.error){console.warn(existing.error);if(btn)btn.disabled=false;return}
-    const willDislike=!existing.data;
-    const r=willDislike
-      ?await sb.from(SOCIAL_TABLES.dislikes).insert({review_id:reviewId,user_id:uid})
-      :await sb.from(SOCIAL_TABLES.dislikes).delete().eq('review_id',reviewId).eq('user_id',uid);
-    if(r.error){console.warn('MiRanking social dislike',r.error);if(btn)btn.disabled=false;return}
-    if(btn){btn.classList.toggle('active',willDislike);btn.disabled=false}
-    await socialUpdateGlobalReactionButton(reviewId,'dislike');
+    const likeBtn=document.querySelector(`[data-global-like="${CSS.escape(String(reviewId))}"]`);
+    const dislikeBtn=document.querySelector(`[data-global-dislike="${CSS.escape(String(reviewId))}"]`);
+    if(likeBtn)likeBtn.disabled=true;
+    if(dislikeBtn)dislikeBtn.disabled=true;
+    try{
+      const existing=await sb.from(SOCIAL_TABLES.dislikes).select('review_id').eq('review_id',reviewId).eq('user_id',uid).maybeSingle();
+      if(existing.error)throw existing.error;
+      const willDislike=!existing.data;
+      if(willDislike){
+        // Una cuenta no puede mantener like y dislike simultáneos en la misma opinión.
+        const removeOpposite=await sb.from(SOCIAL_TABLES.likes).delete().eq('review_id',reviewId).eq('user_id',uid);
+        if(removeOpposite.error)throw removeOpposite.error;
+        const insert=await sb.from(SOCIAL_TABLES.dislikes).insert({review_id:reviewId,user_id:uid});
+        if(insert.error)throw insert.error;
+      }else{
+        const remove=await sb.from(SOCIAL_TABLES.dislikes).delete().eq('review_id',reviewId).eq('user_id',uid);
+        if(remove.error)throw remove.error;
+      }
+      dislikeBtn?.classList.toggle('active',willDislike);
+      likeBtn?.classList.remove('active');
+    }catch(e){
+      console.warn('MiRanking social dislike',e);
+    }finally{
+      if(likeBtn)likeBtn.disabled=false;
+      if(dislikeBtn)dislikeBtn.disabled=false;
+      await socialUpdateGlobalReactionButton(reviewId,'like');
+      await socialUpdateGlobalReactionButton(reviewId,'dislike');
+    }
   }
 
   async function socialSendReply(reviewId,text){
@@ -9603,7 +9637,7 @@ let socialProfileSyncErrorMessage='';
       const visible=Math.max(1,Number(socialGlobalExpanded[x.saga_id]||1));
       const shown=arr.slice(0,visible);
       const more=arr.length>1?`<div class="social-global-more">${shown.length<arr.length?`<button type="button" data-global-more="${socialEsc(x.saga_id)}">Mostrar 5 más</button>`:''}${visible>1?`<button type="button" data-global-less="${socialEsc(x.saga_id)}">Mostrar menos</button>`:''}</div>`:'';
-      const reviewHtml=shown.length?shown.map(rv=>{const p=rv.profile||{};const lc=likeCounts.get(rv.id)||0,dc=dislikeCounts.get(rv.id)||0,liked=likedByMe.has(rv.id),disliked=dislikedByMe.has(rv.id);return `<div class="social-global-review"><div class="social-global-review-head"><div class="social-global-review-user" data-global-review-user="${socialEsc(rv.user_id||'')}">${socialAvatar(p)}<span class="social-global-review-author-name">${socialEsc(p.display_name||p.username||'Usuario')}${window.miRankingBadges?.html?.(rv.user_id)||''}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${canInteract?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${lc}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${dc}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}</div>`}).join(''):'<div class="social-empty" style="margin-top:8px">Todavía no hay opiniones para este anime.</div>';
+      const reviewHtml=shown.length?shown.map(rv=>{const p=rv.profile||{};const lc=likeCounts.get(rv.id)||0,dc=dislikeCounts.get(rv.id)||0,liked=likedByMe.has(rv.id),disliked=dislikedByMe.has(rv.id);return `<div class="social-global-review"><div class="social-global-review-head"><div class="social-global-review-user" data-global-review-user="${socialEsc(rv.user_id||'')}">${socialAvatar(p)}<span class="social-global-review-author-name">${socialEsc(p.display_name||p.username||'Usuario')}${window.miRankingBadges?.html?.(rv.user_id)||''}</span></div></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${canInteract?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${lc}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${dc}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}</div>`}).join(''):'<div class="social-empty" style="margin-top:8px">Todavía no hay opiniones para este anime.</div>';
       return `<article class="social-global-anime-card" data-global-card="${socialEsc(x.saga_id)}"><div class="social-global-anime-head"><div class="social-global-anime-rank">#${i+1}</div><img data-social-cover="${socialEsc(n)}" src="${socialEsc(socialCoverUrl(n))}" alt=""><div class="social-global-anime-title-wrap"><div class="social-global-anime-name">${socialEsc(n)}</div><div class="social-global-anime-meta">${x.votes} voto${x.votes===1?'':'s'}</div></div><div class="social-global-anime-score">${Math.floor(x.score)}</div></div>${reviewHtml}${more}</article>`;
     }).join('');
     socialResolveCovers(el);
@@ -9958,7 +9992,7 @@ let socialProfileSyncErrorMessage='';
         const liked=!!rv.likedByMe,disliked=!!rv.dislikedByMe;
         const wrap=document.createElement('div');
         wrap.className='social-global-review';
-        wrap.innerHTML=`<div class="social-global-review-head"><div class="social-global-review-user">${socialAvatar(p)}<span>${socialEsc(p.display_name||p.username||'Usuario')}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${session?.user?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${Number(rv.likeCount)||0}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${Number(rv.dislikeCount)||0}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}`;
+        wrap.innerHTML=`<div class="social-global-review-head"><div class="social-global-review-user">${socialAvatar(p)}<span>${socialEsc(p.display_name||p.username||'Usuario')}</span></div></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${session?.user?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${Number(rv.likeCount)||0}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${Number(rv.dislikeCount)||0}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}`;
         return wrap;
       };
       // Conservamos el botón existente y solamente insertamos las nuevas opiniones antes de él.
@@ -10300,15 +10334,27 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
     const similarity=(a,b)=>{const A=wordSet(a),B=wordSet(b);if(!A.size||!B.size)return 0;let n=0;for(const w of A)if(B.has(w))n++;return n/(A.size+B.size-n)};
     function rankFor(watched,opinions){
       const n=Math.max(0,Number(watched)||0),r=Math.max(0,Number(opinions)||0);
-      // Hierro es el rango inicial de prueba: se muestra con 0-24 animes aunque falten críticas válidas.
-      if(n<25)return {key:'iron',label:'Hierro',icon:'⚙️',next:25};
-      if(r*2<n)return null;
-      if(n>=750)return {key:'master',label:'Maestro',icon:'♛',next:null};
-      if(n>=500)return {key:'ruby',label:'Ruby',icon:'◆',next:750};
-      if(n>=300)return {key:'diamond',label:'Diamante',icon:'◆',next:500};
-      if(n>=150)return {key:'platinum',label:'Platino',icon:'⬡',next:300};
-      if(n>=75)return {key:'gold',label:'Oro',icon:'★',next:150};
-      return {key:'bronze',label:'Bronce',icon:'⬟',next:75};
+      // Cada rango exige opiniones equivalentes al 33% de su propio umbral de animes.
+      // El total de animes puntuados por encima del umbral no aumenta este requisito.
+      const tiers=[
+        {key:'master',label:'Maestro',icon:'♛',min:1000},
+        {key:'ruby',label:'Ruby',icon:'◆',min:500},
+        {key:'diamond',label:'Diamante',icon:'◆',min:300},
+        {key:'platinum',label:'Platino',icon:'⬡',min:150},
+        {key:'gold',label:'Oro',icon:'★',min:75},
+        {key:'silver',label:'Plata',icon:'✦',min:30},
+        {key:'bronze',label:'Bronce',icon:'⬟',min:25}
+      ];
+      if(n<25)return {key:'iron',label:'Hierro',icon:'⚙️',next:25,requiredOpinions:0};
+      for(let i=0;i<tiers.length;i++){
+        const t=tiers[i],requiredOpinions=Math.ceil(t.min*0.33);
+        if(n>=t.min&&r>=requiredOpinions){
+          const next=tiers[i-1]||null;
+          return {...t,next:next?.min??null,requiredOpinions};
+        }
+      }
+      const next=tiers.find(t=>n<t.min)||null;
+      return {key:'iron',label:'Hierro',icon:'⚙️',next:next?.min??25,requiredOpinions:0};
     }
     function rankMedalSvg(key){
       const palette={iron:['#d7dde3','#56616d'],bronze:['#ffd0a0','#8a4e2c'],gold:['#fff0a6','#b77912'],platinum:['#effaff','#7395b0'],diamond:['#8be6ff','#1265b7'],ruby:['#ff9ab0','#a20e37'],master:['#efd5ff','#6633b5']};
@@ -10377,7 +10423,7 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
       const target=document.getElementById('badgeProgressContent');if(!target)return;
       const uid=session?.user?.id||authUser?.id;if(!uid||!sb){target.innerHTML='<div class="badge-progress-foot">Iniciá sesión para consultar tu progreso de insignia.</div>';return}
       target.innerHTML='<div class="badge-progress-foot">Calculando progreso…</div>';
-      try{const [pr,rv]=await Promise.all([sb.from(SOCIAL_TABLES.profiles).select('watched_count').eq('id',uid).maybeSingle(),sb.from(SOCIAL_TABLES.reviews).select('text,moderation_status').eq('user_id',uid).limit(10000)]);if(pr.error)throw pr.error;if(rv.error)throw rv.error;const watched=Math.max(0,Number(pr.data?.watched_count)||0);const opinions=(rv.data||[]).filter(r=>usefulChars(r.text)>=MIN_REVIEW_CHARS&&(r.moderation_status||'approved')==='approved').length;const thresholds=[{n:25,label:'Bronce',icon:'⬟'},{n:75,label:'Oro',icon:'★'},{n:150,label:'Platino',icon:'⬡'},{n:300,label:'Diamante',icon:'◆'},{n:500,label:'Ruby',icon:'◆'},{n:750,label:'Maestro',icon:'♛'}];const rank=rankFor(watched,opinions);const next=thresholds.find(t=>watched<t.n)||null;const current=rank||{key:'iron',label:'Sin rango',icon:'◇'};const pct=next?Math.min(100,Math.floor(watched/next.n*100)):100;target.innerHTML=`<div class="badge-progress-head"><div class="badge-progress-icon">${rankMedalSvg(current.key||'iron')}</div><div><div class="badge-progress-title">${socialEsc(current.label)}</div><div class="badge-progress-sub">${watched} animes terminados · ${opinions} críticas válidas</div></div></div>${next?`<div class="badge-progress-foot">Siguiente rango: <b>${socialEsc(next.label)}</b></div><div class="badge-progress-track"><div class="badge-progress-fill" style="width:${pct}%"></div></div><div class="badge-progress-foot">${watched}/${next.n} animes terminados · faltan ${Math.max(0,next.n-watched)}. También necesitás al menos una crítica válida cada dos animes terminados.</div>`:'<div class="badge-progress-foot">Alcanzaste el rango máximo.</div>'}${opinions*2<watched?'<div class="badge-progress-foot">Te faltan críticas válidas para cumplir el requisito de opiniones.</div>':''}`;}catch(e){console.warn('MiRanking progreso insignia',e);target.innerHTML='<div class="badge-progress-foot">No se pudo cargar el progreso. Revisá tu conexión e intentá de nuevo.</div>'}
+      try{const [pr,rv]=await Promise.all([sb.from(SOCIAL_TABLES.profiles).select('watched_count').eq('id',uid).maybeSingle(),sb.from(SOCIAL_TABLES.reviews).select('text,moderation_status').eq('user_id',uid).limit(10000)]);if(pr.error)throw pr.error;if(rv.error)throw rv.error;const watched=Math.max(0,Number(pr.data?.watched_count)||0);const opinions=(rv.data||[]).filter(r=>usefulChars(r.text)>=MIN_REVIEW_CHARS&&(r.moderation_status||'approved')==='approved').length;const thresholds=[{n:25,label:'Bronce',icon:'⬟',opinions:9},{n:30,label:'Plata',icon:'✦',opinions:10},{n:75,label:'Oro',icon:'★',opinions:25},{n:150,label:'Platino',icon:'⬡',opinions:50},{n:300,label:'Diamante',icon:'◆',opinions:99},{n:500,label:'Ruby',icon:'◆',opinions:165},{n:1000,label:'Maestro',icon:'♛',opinions:330}];const rank=rankFor(watched,opinions);const next=thresholds.find(t=>watched<t.n)||null;const current=rank||{key:'iron',label:'Sin rango',icon:'◇'};const pct=next?Math.min(100,Math.floor(watched/next.n*100)):100;target.innerHTML=`<div class="badge-progress-head"><div class="badge-progress-icon">${rankMedalSvg(current.key||'iron')}</div><div><div class="badge-progress-title">${socialEsc(current.label)}</div><div class="badge-progress-sub">${watched} animes terminados · ${opinions} críticas válidas</div></div></div>${next?`<div class="badge-progress-foot">Siguiente rango: <b>${socialEsc(next.label)}</b></div><div class="badge-progress-track"><div class="badge-progress-fill" style="width:${pct}%"></div></div><div class="badge-progress-foot">${watched}/${next.n} animes terminados · faltan ${Math.max(0,next.n-watched)}. También necesitás ${next.opinions} opiniones válidas para ese rango (33% del requisito de animes).</div>`:'<div class="badge-progress-foot">Alcanzaste el rango máximo.</div>'}${rank&&rank.requiredOpinions&&opinions<rank.requiredOpinions?'<div class="badge-progress-foot">Te faltan críticas válidas para este rango.</div>':''}`;}catch(e){console.warn('MiRanking progreso insignia',e);target.innerHTML='<div class="badge-progress-foot">No se pudo cargar el progreso. Revisá tu conexión e intentá de nuevo.</div>'}
     };
     // Decoración segura de vistas principales. Solo añade insignias a contenedores de nombres identificados.
     const originalLoadReviews=window.socialLoadReviews;
