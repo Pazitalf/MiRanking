@@ -8339,6 +8339,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   const DEVICE_KEY=AUTH_LOCAL+'-device-id';
   let sb=null,session=null,authUser=null,authReady=false,cloudTimer=null,retryTimer=null,cloudBusy=false,cloudPending=false,syncApplying=false;
   let authMode='login';
+  let authIntent=null;
   const $=id=>document.getElementById(id);
   const overlay=$('mirAuthOverlay');
   const normalizeUsername=v=>String(v||'').trim().toLowerCase();
@@ -8383,7 +8384,26 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   }
   function stateOnly(row){return {ranking:Array.isArray(row?.ranking)?row.ranking:[],season_details:row?.season_details&&typeof row.season_details==='object'?row.season_details:{},watch_meta:row?.watch_meta&&typeof row.watch_meta==='object'?row.watch_meta:{},random_state:row?.random_state&&typeof row.random_state==='object'?row.random_state:{},preferences:row?.preferences&&typeof row.preferences==='object'?row.preferences:{}}}
   function localStateHasData(){try{return (Array.isArray(data)&&data.some(x=>Number(x.score)>0))||(typeof seasonDetails==='object'&&Object.keys(seasonDetails||{}).length>0)||Object.keys(getWatchMeta?.()||{}).length>0}catch(e){return false}}
-  function mergeGuestScores(remoteState,localState){const ranking=[...(remoteState.ranking||[])],positions=new Map();const key=x=>String(x?.name||x?.id||'').trim().toLocaleLowerCase();ranking.forEach((x,i)=>{const k=key(x);if(k)positions.set(k,i)});let changed=false;for(const item of localState.ranking||[]){if(!(Number(item?.score)>0))continue;const k=key(item);if(!k)continue;const i=positions.get(k);if(i===undefined){positions.set(k,ranking.length);ranking.push(item);changed=true}else if(!(Number(ranking[i]?.score)>0)){ranking[i]={...ranking[i],...item};changed=true}}return changed?{...remoteState,ranking}:null}
+  function mergeGuestState(remoteState,guestState){
+    const remote=stateOnly(remoteState),guest=stateOnly(guestState);
+    const ranking=[...(remote.ranking||[])],positions=new Map();
+    const key=x=>String(x?.name||x?.id||'').trim().toLocaleLowerCase();
+    ranking.forEach((item,i)=>{const k=key(item);if(k)positions.set(k,i)});
+    for(const item of guest.ranking||[]){
+      if(!(Number(item?.score)>0))continue;
+      const k=key(item);if(!k)continue;
+      const i=positions.get(k);
+      if(i===undefined){positions.set(k,ranking.length);ranking.push(item)}
+      else ranking[i]={...ranking[i],...item};
+    }
+    return {
+      ranking,
+      season_details:{...(remote.season_details||{}),...(guest.season_details||{})},
+      watch_meta:{...(remote.watch_meta||{}),...(guest.watch_meta||{})},
+      random_state:guest.random_state&&Object.keys(guest.random_state).length?guest.random_state:remote.random_state,
+      preferences:{...(remote.preferences||{}),...(guest.preferences||{})}
+    };
+  }
   function applyLocalState(st){syncApplying=true;try{data=Array.isArray(st?.ranking)?normalizeRankingEntries(st.ranking):[];seasonDetails=st?.season_details&&typeof st.season_details==='object'?st.season_details:{};const meta=st?.watch_meta&&typeof st.watch_meta==='object'?st.watch_meta:{};localStorage.setItem((typeof STORAGE==='string'?STORAGE:'mi-ranking-public-v1')+'-watch-meta-v1',JSON.stringify(meta));const random=st?.random_state&&typeof st.random_state==='object'?st.random_state:{};localStorage.setItem(typeof RANDOM_STATE_KEY==='string'?RANDOM_STATE_KEY:'mi-ranking-public-v1-random-v3',JSON.stringify(random));if(typeof appPrefs==='object'&&appPrefs){appPrefs={...appPrefs,...(st?.preferences||{})};savePrefs?.()}window.reloadMiRankingRandomState?.();invalidateScoredCaches?.();render?.();renderWatching?.();updateConfigInfo?.();refreshConfigControls?.();applyLanguage?.()}finally{syncApplying=false}}
   function replaceLocalState(row){const st=stateOnly(row);applyLocalState(st);const m=readSyncMeta();writeSyncMeta({...m,base:safeJson(st),lastRemoteUpdatedAt:row?.updated_at||null,dirty:false,retry:0,deviceId:deviceId(),ownerUserId:session?.user?.id||null});syncStatus('synced','synced')}
   function mergeThreeWay(base,local,remote){
@@ -8425,22 +8445,53 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   function updateCornerAvatar(){const b=$('mirUserCorner');if(!b)return;const loggedIn=!!(session?.user||authUser),name=loggedIn?(profileName()||tx('user')):tx('login'),p=getProfile();b.innerHTML='';const avatar=document.createElement('span');avatar.className='mir-user-corner-avatar';avatar.setAttribute('aria-hidden','true');if(loggedIn&&p.avatar){const im=document.createElement('img');im.className='mir-user-corner-image';im.src=p.avatar;im.alt='';avatar.appendChild(im)}else avatar.textContent=String(name).charAt(0).toUpperCase()||'?';b.appendChild(avatar);const label=document.createElement('span');label.className='mir-user-corner-label';label.id='mirUserCornerLabel';label.textContent=name;b.appendChild(label);const ownBadge=loggedIn?(window.miRankingBadges?.html?.(authUser?.id||session?.user?.id)||''):'';if(ownBadge){const badgeWrap=document.createElement('span');badgeWrap.className='mir-user-corner-badge';badgeWrap.innerHTML=ownBadge;const badgeNodes=[...badgeWrap.querySelectorAll('.mr121-badge')];if(badgeNodes.length>1){const labels=[...new Set(badgeNodes.map(x=>x.getAttribute('aria-label')||x.getAttribute('title')||'').filter(Boolean))];const titles=[...new Set(badgeNodes.map(x=>x.getAttribute('title')||'').filter(Boolean))];if(titles.length)badgeNodes[0].setAttribute('title',titles.join(' · '));if(labels.length)badgeNodes[0].setAttribute('aria-label',labels.join(' · '));badgeNodes.slice(1).forEach(x=>x.remove())}b.appendChild(badgeWrap)}const dot=document.createElement('span');dot.className='mir-user-corner-status';dot.setAttribute('aria-hidden','true');dot.hidden=!loggedIn;b.appendChild(dot);b.classList.toggle('offline',loggedIn&&!navigator.onLine);b.classList.toggle('error',loggedIn&&readSyncMeta().lastError===true);b.title=name;b.setAttribute('aria-label',name);b.setAttribute('aria-haspopup',loggedIn?'menu':'dialog');const mn=$('mirUserMenuName');if(mn)mn.textContent=name;const ms=$('mirUserMenuState');if(ms)ms.textContent=loggedIn?tx('connected'):tx('logged')}
   function setUserMenu(open){const menu=$('mirUserMenu'),btn=$('mirUserCorner');if(!menu||!btn)return;menu.classList.toggle('open',open);menu.setAttribute('aria-hidden',open?'false':'true');btn.setAttribute('aria-expanded',open?'true':'false')}
   async function afterAuthenticated(isNew){
-    closeWelcomeTour(false);authUser=session?.user||null;localStorage.setItem(AUTH_LOCAL+'-username',normalizeUsername(authUser?.user_metadata?.username||localStorage.getItem(AUTH_LOCAL+'-username')||''));
-    const cloud=await fetchCloudState();if(cloud.error){syncStatus('error','syncError');msg(tx('cloudErr'),'error');throw cloud.error}
-    if(cloud.row){
-      const remoteState=stateOnly(cloud.row),localState=collectCloudState(),meta=readSyncMeta();
-      const canImportLocalScores=isNew||(meta.ownerUserId?meta.ownerUserId===session?.user?.id:!meta.lastRemoteUpdatedAt&&!meta.base);
-      const merged=canImportLocalScores?mergeGuestScores(remoteState,localState):null;
-      if(merged){applyLocalState(merged);writeSyncMeta({base:safeJson(remoteState),lastRemoteUpdatedAt:cloud.row.updated_at||null,dirty:true,retry:0,deviceId:deviceId(),ownerUserId:session?.user?.id});await upsertCloudNow(true)}else replaceLocalState(cloud.row);
-    }else{
-      // Cuenta sin fila en la nube: conservar el estado local y crear la primera
-      // sincronización. Nunca asumimos que “sin fila” significa “sin datos”.
-      const localState=collectCloudState();
-      writeSyncMeta({base:safeJson(localState),lastRemoteUpdatedAt:null,dirty:true,retry:0,deviceId:deviceId(),ownerUserId:session?.user?.id});
-      await upsertCloudNow(true);
+    closeWelcomeTour(false);
+    authUser=session?.user||null;
+    localStorage.setItem(AUTH_LOCAL+'-username',normalizeUsername(authUser?.user_metadata?.username||localStorage.getItem(AUTH_LOCAL+'-username')||''));
+
+    const cloud=await fetchCloudState();
+    if(cloud.error){
+      syncStatus('error','syncError');
+      msg(tx('cloudErr'),'error');
+      throw cloud.error;
     }
-    authReady=true;wrapPersistence();updateAccountUI();hideOverlay();setTimeout(async()=>{try{if(typeof socialSyncProfile==='function')await socialSyncProfile();if(isNew&&$('mirAuthTerms')?.checked&&typeof socialUserId==='function'&&session?.user){const now=new Date().toISOString();await sb.from(SOCIAL_TABLES.profiles).update({terms_accepted_at:now,updated_at:now}).eq('id',session.user.id)}if(typeof socialLoadCommunityState==='function')await socialLoadCommunityState();if(typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social initial sync',e)}},700);
-    [1800,3500,6000].forEach(delay=>setTimeout(async()=>{try{if(authReady&&session?.user&&typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social retry',e)}},delay));try{document.getElementById('navRanking')?.click()}catch(e){}
+
+    if(isNew){
+      // CREACIÓN: el ranking de invitado se convierte en el ranking inicial de la cuenta.
+      const guestState=collectCloudState();
+      const initialState=cloud.row?mergeGuestState(stateOnly(cloud.row),guestState):guestState;
+      applyLocalState(initialState);
+      writeSyncMeta({
+        base:cloud.row?safeJson(stateOnly(cloud.row)):safeJson({ranking:[],season_details:{},watch_meta:{},random_state:{},preferences:{}}),
+        lastRemoteUpdatedAt:cloud.row?.updated_at||null,
+        dirty:true,retry:0,deviceId:deviceId(),ownerUserId:session?.user?.id||null
+      });
+      const saved=await upsertCloudNow(true);
+      if(!saved)throw new Error(tx('syncError'));
+    }else{
+      // INICIO DE SESIÓN: jamás importar ni mezclar el ranking anónimo en una cuenta existente.
+      // La cuenta es la única fuente de verdad, incluso si todavía no tiene fila en user_data.
+      if(cloud.row){
+        replaceLocalState(cloud.row);
+      }else{
+        const emptyState={ranking:[],season_details:{},watch_meta:{},random_state:{},preferences:{}};
+        applyLocalState(emptyState);
+        writeSyncMeta({
+          base:safeJson(emptyState),lastRemoteUpdatedAt:null,
+          dirty:true,retry:0,deviceId:deviceId(),ownerUserId:session?.user?.id||null
+        });
+        const saved=await upsertCloudNow(true);
+        if(!saved)throw new Error(tx('syncError'));
+      }
+    }
+
+    authReady=true;
+    wrapPersistence();
+    updateAccountUI();
+    hideOverlay();
+    setTimeout(async()=>{try{if(typeof socialSyncProfile==='function')await socialSyncProfile();if(isNew&&$('mirAuthTerms')?.checked&&typeof socialUserId==='function'&&session?.user){const now=new Date().toISOString();await sb.from(SOCIAL_TABLES.profiles).update({terms_accepted_at:now,updated_at:now}).eq('id',session.user.id)}if(typeof socialLoadCommunityState==='function')await socialLoadCommunityState();if(typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social initial sync',e)}},700);
+    [1800,3500,6000].forEach(delay=>setTimeout(async()=>{try{if(authReady&&session?.user&&typeof socialEnsureOwnScores==='function')await socialEnsureOwnScores();if(document.getElementById('socialPanel')?.classList.contains('open'))await socialRenderAnimeRankingGlobal(document.getElementById('socialAnimeSearch')?.value||'');}catch(e){console.warn('MiRanking social retry',e)}},delay));
+    try{document.getElementById('navRanking')?.click()}catch(e){}
     if(isNew){msg(tx('created'),'ok');setTimeout(()=>msg(''),1200)}
   }
   function ensureSupabaseClient(){if(sb?.auth)return sb;if(!window.supabase?.createClient)throw new Error('No se pudo cargar la biblioteca de Supabase.');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return sb}
@@ -8456,7 +8507,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   function welcomeTourHasScores(){try{if(Array.isArray(data)&&data.some(item=>Number(item?.score)>0))return true}catch(e){}try{return Object.values(seasonDetails||{}).some(detail=>(Array.isArray(detail?.seasons)?detail.seasons:[]).some(season=>Number(season?.score)>0||Object.values(season?.episodes||{}).some(score=>Number(score)>0)))}catch(e){return false}}
   function closeWelcomeTour(markSeen=true){if(welcomeTourTimer){clearTimeout(welcomeTourTimer);welcomeTourTimer=null}if(markSeen){try{localStorage.setItem(welcomeTourKey,'1')}catch(e){}}if(welcomeTourEl?.classList.contains('open')){welcomeTourEl.classList.remove('open');welcomeTourEl.setAttribute('aria-hidden','true');document.body.style.overflow=welcomeTourPreviousOverflow??'';welcomeTourPreviousOverflow=null}}
   function maybeShowWelcomeTour(){if(!welcomeTourEl||session?.user||authUser||welcomeTourHasScores())return;try{if(localStorage.getItem(welcomeTourKey)==='1')return}catch(e){}if(welcomeTourTimer)clearTimeout(welcomeTourTimer);welcomeTourTimer=setTimeout(()=>{welcomeTourTimer=null;if(session?.user||authUser||welcomeTourHasScores())return;try{if(localStorage.getItem(welcomeTourKey)==='1')return}catch(e){}applyWelcomeTourLanguage();welcomeTourPreviousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';welcomeTourEl.classList.add('open');welcomeTourEl.setAttribute('aria-hidden','false');try{$('mrWelcomeTourStart')?.focus({preventScroll:true})}catch(e){$('mrWelcomeTourStart')?.focus()}},1450)}
-  $('mrWelcomeTourCloseIcon')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourDismiss')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourStart')?.addEventListener('click',()=>{closeWelcomeTour(true);setTimeout(()=>openStartTutorial(),0)});welcomeTourEl?.addEventListener('click',ev=>{if(ev.target===welcomeTourEl)closeWelcomeTour(true)});document.addEventListener('keydown',ev=>{if(!welcomeTourEl?.classList.contains('open'))return;if(ev.key==='Escape'){closeWelcomeTour(true);return}if(ev.key==='Tab'){const focusable=[...welcomeTourEl.querySelectorAll('button:not([disabled])')];if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];if(ev.shiftKey&&document.activeElement===first){ev.preventDefault();last.focus()}else if(!ev.shiftKey&&document.activeElement===last){ev.preventDefault();first.focus()}}});  async function initAuth(){try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');updateAccountUI();maybeShowWelcomeTour();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI();maybeShowWelcomeTour()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();if(session?.user){authUser=session.user;updateAccountUI()}}}
+  $('mrWelcomeTourCloseIcon')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourDismiss')?.addEventListener('click',()=>closeWelcomeTour(true));$('mrWelcomeTourStart')?.addEventListener('click',()=>{closeWelcomeTour(true);setTimeout(()=>openStartTutorial(),0)});welcomeTourEl?.addEventListener('click',ev=>{if(ev.target===welcomeTourEl)closeWelcomeTour(true)});document.addEventListener('keydown',ev=>{if(!welcomeTourEl?.classList.contains('open'))return;if(ev.key==='Escape'){closeWelcomeTour(true);return}if(ev.key==='Tab'){const focusable=[...welcomeTourEl.querySelectorAll('button:not([disabled])')];if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];if(ev.shiftKey&&document.activeElement===first){ev.preventDefault();last.focus()}else if(!ev.shiftKey&&document.activeElement===last){ev.preventDefault();first.focus()}}});  async function initAuth(){try{const client=ensureSupabaseClient();const {data,error}=await client.auth.getSession();if(error)throw error;session=data?.session||null;if(session){await afterAuthenticated(false);return}authReady=false;applyAuthLanguage();setMode('login');updateAccountUI();maybeShowWelcomeTour();ensureSupabaseClient().auth.onAuthStateChange(async(_event,s)=>{session=s||null;if(session&&!authReady){if(authIntent)return;try{await afterAuthenticated(false)}catch(e){console.error(e)}}else if(!session){authReady=false;authUser=null;syncStatus('synced','synced');hideOverlay();updateAccountUI();maybeShowWelcomeTour()}})}catch(e){console.error('MiRanking Supabase init',e);syncStatus('error','syncError');msg(e?.message||'No se pudo iniciar la cuenta.','error');applyAuthLanguage();if(session?.user){authUser=session.user;updateAccountUI()}}}
   async function changePassword(){
     const current=$('mirCurrentPassword').value,newPass=$('mirNewPassword').value,repeat=$('mirNewPassword2').value;if(newPass.length<8){passwordMsg(tx('badPass'),'error');return}if(newPass!==repeat){passwordMsg(tx('same'),'error');return}if(newPass===current){passwordMsg(tx('passwordSame'),'error');return}
     const username=normalizeUsername(localStorage.getItem(AUTH_LOCAL+'-username')||authUser?.user_metadata?.username||'');if(!username){passwordMsg(tx('passwordUnavailable'),'error');return}
@@ -8484,7 +8535,7 @@ function loadPrefs(){try{const raw=JSON.parse(localStorage.getItem(PREF_KEY)||'{
   $('mirProfileSave')?.addEventListener('click',async()=>{const displayName=String($('mirProfileDisplayName').value||'').trim();if(displayName.length>40)return;const current=getProfile(),profile={displayName,bio:String($('mirProfileBio').value||'').trim(),favorite:String($('mirProfileFavorite').value||'').trim(),avatar:$('mirProfileAvatar').dataset.src!==undefined?$('mirProfileAvatar').dataset.src:current.avatar};appPrefs={...appPrefs,profile};try{savePrefs();scheduleCloudSync();updateAccountUI();setProfileMessage(tx('profileSaved'),'ok');if(sb&&session?.user){const synced=await socialSyncProfile({forceProfileValues:true});if(!synced){setProfileMessage('El perfil se guardó en este dispositivo, pero no se pudo sincronizar con el perfil público. '+(socialProfileSyncErrorMessage?('Detalle: '+socialProfileSyncErrorMessage):'Revisá la conexión y las políticas de public.profiles.')+' El editor permanece abierto.','error');return}}setTimeout(closeProfileEditor,900)}catch(e){console.error('MiRanking guardar perfil',e);setProfileMessage(tx('profileImageError'),'error')}});
 
 $('mirAuthTabLogin')?.addEventListener('click',()=>setMode('login'));$('mirAuthTabRegister')?.addEventListener('click',()=>setMode('register'));
-  $('mirAuthForm')?.addEventListener('submit',async ev=>{ev.preventDefault();msg('');setBusy(true);try{const username=normalizeUsername($('mirAuthUsername').value),password=$('mirAuthPassword').value,p2=$('mirAuthPassword2').value;if(!validUsername(username)){msg(tx('badUser'),'error');return}if(password.length<8){msg(tx('badPass'),'error');return}if(authMode==='register'&&password!==p2){msg(tx('same'),'error');return}if(authMode==='register'&&!$('mirAuthTerms')?.checked){msg('Tenés que aceptar los Términos de Uso para crear la cuenta.','error');return}const email=authEmail(username),client=ensureSupabaseClient();if(authMode==='register'){const {data,error}=await client.auth.signUp({email,password,options:{data:{username}}});if(error)throw error;if(!data?.session)throw new Error('Supabase tiene activada la confirmación de email.');localStorage.setItem(AUTH_LOCAL+'-username',username);session=data.session;authUser=data.user;await afterAuthenticated(true)}else{const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;localStorage.setItem(AUTH_LOCAL+'-username',username);session=data.session;authUser=data.user;await afterAuthenticated(false)}}catch(e){console.error('MiRanking auth',e);const raw=String(e?.message||e?.error_description||e?.error||'').trim(),lower=raw.toLowerCase();let detail=raw;if(lower.includes('invalid login')||lower.includes('invalid credentials'))detail=tx('loginErr');else if(lower.includes('user already registered')||lower.includes('already registered'))detail=tx('userExists');else if(lower.includes('email')&&lower.includes('confirm'))detail=tx('confirmEmail');else if(!detail)detail=authMode==='register'?tx('signupErr'):tx('loginErr');msg(detail,'error')}finally{setBusy(false)}});
+  $('mirAuthForm')?.addEventListener('submit',async ev=>{ev.preventDefault();msg('');setBusy(true);try{const username=normalizeUsername($('mirAuthUsername').value),password=$('mirAuthPassword').value,p2=$('mirAuthPassword2').value;if(!validUsername(username)){msg(tx('badUser'),'error');return}if(password.length<8){msg(tx('badPass'),'error');return}if(authMode==='register'&&password!==p2){msg(tx('same'),'error');return}if(authMode==='register'&&!$('mirAuthTerms')?.checked){msg('Tenés que aceptar los Términos de Uso para crear la cuenta.','error');return}const email=authEmail(username),client=ensureSupabaseClient();authIntent=authMode;if(authMode==='register'){const {data,error}=await client.auth.signUp({email,password,options:{data:{username}}});if(error)throw error;if(!data?.session)throw new Error('Supabase tiene activada la confirmación de email.');localStorage.setItem(AUTH_LOCAL+'-username',username);session=data.session;authUser=data.user;await afterAuthenticated(true)}else{const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;localStorage.setItem(AUTH_LOCAL+'-username',username);session=data.session;authUser=data.user;await afterAuthenticated(false)}}catch(e){console.error('MiRanking auth',e);const raw=String(e?.message||e?.error_description||e?.error||'').trim(),lower=raw.toLowerCase();let detail=raw;if(lower.includes('invalid login')||lower.includes('invalid credentials'))detail=tx('loginErr');else if(lower.includes('user already registered')||lower.includes('already registered'))detail=tx('userExists');else if(lower.includes('email')&&lower.includes('confirm'))detail=tx('confirmEmail');else if(!detail)detail=authMode==='register'?tx('signupErr'):tx('loginErr');msg(detail,'error')}finally{authIntent=null;setBusy(false)}});
   async function deleteMyAccount(){
     const button=$('mirDeleteAccount'),status=$('mirDeleteAccountMessage');
     if(!session?.user){if(status){status.textContent=tx('deleteAccountError');status.className='mir-auth-msg error'}return}
