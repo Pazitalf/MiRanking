@@ -11820,5 +11820,110 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
 }
 </style>
 </style>
+<style id="mr104-interactive-tour-style">
+#mr104Tour{position:fixed;inset:0;z-index:1000000;display:none;pointer-events:auto}
+#mr104Tour.is-open{display:block}
+#mr104Tour .mr104-tour-shade{position:absolute;inset:0;background:rgba(3,9,14,.68);backdrop-filter:blur(1px)}
+#mr104Tour .mr104-tour-spotlight{position:fixed;z-index:2;pointer-events:none;border:2px solid #68dfbd;border-radius:13px;box-shadow:0 0 0 9999px rgba(3,9,14,.68),0 0 0 5px rgba(104,223,189,.16);transition:all .2s ease}
+#mr104Tour .mr104-tour-card{position:fixed;z-index:3;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min( min(560px,calc(100vw - 28px)),560px);padding:17px 19px 15px;border:1px solid rgba(104,223,189,.3);border-radius:17px;background:#142129;color:#edf7f5;box-shadow:0 18px 60px rgba(0,0,0,.45);font-family:inherit}
+#mr104Tour .mr104-tour-top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#8edfc9;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+#mr104Tour .mr104-tour-title{margin:8px 0 5px;font-size:20px;line-height:1.2;font-weight:850}
+#mr104Tour .mr104-tour-text{margin:0;color:#b7c7c8;font-size:13px;line-height:1.5}
+#mr104Tour .mr104-tour-hint{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.09);display:flex;justify-content:space-between;gap:10px;color:#8da5a7;font-size:11px}
+#mr104Tour .mr104-tour-skip{position:absolute;right:13px;top:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#dce9e7;border-radius:8px;padding:5px 8px;font-size:11px;cursor:pointer}
+#mr104Tour .mr104-tour-card{padding-top:23px}
+#mr104Tour .mr104-tour-progress{height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:12px}
+#mr104Tour .mr104-tour-progress span{display:block;height:100%;background:#68dfbd;transition:width .2s}
+@media(max-width:600px){#mr104Tour .mr104-tour-card{bottom:max(10px,env(safe-area-inset-bottom));padding:22px 15px 13px;border-radius:15px}#mr104Tour .mr104-tour-title{font-size:18px}#mr104Tour .mr104-tour-text{font-size:12px}}
+@media(prefers-reduced-motion:reduce){#mr104Tour .mr104-tour-spotlight,#mr104Tour .mr104-tour-progress span{transition:none}}
+</style>
+<script id="mr104-interactive-tour">
+(function(){
+  const steps = [
+    {target:'#newTabRandom',title:'Aleatorio',text:'Esta es la sección para descubrir animes que todavía no puntuaste. MiRanking te propone tres opciones del catálogo para que elijas cuál querés evaluar.'},
+    {target:'#newRandomView .random-filters',title:'Filtros',text:'Podés limitar los resultados por género, año y trimestre. Si no elegís nada, Aleatorio considera todos los animes disponibles que todavía no puntuaste.'},
+    {target:'#reroll',title:'Nuevos 3',text:'Este botón genera otra tanda de tres animes aleatorios respetando los filtros que hayas elegido. Usalo cuando ninguna de las opciones te interese.'},
+    {target:'#randomList .random-card',title:'Tarjetas de anime',text:'Cada tarjeta muestra un anime sugerido. Desde sus acciones podés abrirlo para puntuarlo o descartarlo de la tanda. Las sugerencias se actualizan según tu progreso.'},
+    {target:'#newTabList',title:'Lista',text:'También podés cambiar a Lista para explorar el catálogo completo de animes pendientes, buscar títulos y recorrerlos con más control.'},
+    {target:'#newSearch',title:'Buscador',text:'Escribí el nombre o una parte del nombre para encontrar rápidamente un anime dentro del catálogo.'},
+    {target:'#newListView .filters',title:'Filtros y orden',text:'En la Lista podés combinar búsqueda, género, año y trimestre. Además, podés ordenar los resultados por fecha de lanzamiento o por nombre.'},
+    {target:'#newTabRandom',title:'Volvé a Aleatorio cuando quieras',text:'Ya conocés las herramientas principales. Elegí un anime, abrí su puntuación y empezá a construir tu ranking. El tutorial puede repetirse desde la ayuda.'}
+  ];
+  let index=0, overlay=null, spot=null, card=null, resizeHandler=null;
+  function ensure(){
+    if(overlay)return;
+    overlay=document.createElement('div');
+    overlay.id='mr104Tour';
+    overlay.innerHTML='<div class="mr104-tour-shade"></div><div class="mr104-tour-spotlight"></div><section class="mr104-tour-card" role="dialog" aria-live="polite" aria-label="Tutorial de MiRanking"><button type="button" class="mr104-tour-skip">Saltar tutorial</button><div class="mr104-tour-top"><span>RECORRIDO GUIADO</span><span class="mr104-tour-count"></span></div><h3 class="mr104-tour-title"></h3><p class="mr104-tour-text"></p><div class="mr104-tour-progress"><span></span></div><div class="mr104-tour-hint"><span>Tocá en cualquier lugar para continuar</span><span>ESC para salir</span></div></section>';
+    document.body.appendChild(overlay);
+    spot=overlay.querySelector('.mr104-tour-spotlight');
+    card=overlay.querySelector('.mr104-tour-card');
+    overlay.addEventListener('click',function(ev){
+      if(ev.target.closest('.mr104-tour-skip')){ev.stopPropagation();finish();return;}
+      advance();
+    });
+    document.addEventListener('keydown',onKey);
+  }
+  function onKey(ev){if(!overlay?.classList.contains('is-open'))return;if(ev.key==='Escape'){finish();}}
+  function position(){
+    if(!overlay?.classList.contains('is-open'))return;
+    const step=steps[index], target=document.querySelector(step.target);
+    if(!target || !target.getClientRects().length){
+      spot.style.display='none';
+    }else{
+      const r=target.getBoundingClientRect(), pad=5;
+      spot.style.display='block';
+      spot.style.left=Math.max(4,r.left-pad)+'px';
+      spot.style.top=Math.max(4,r.top-pad)+'px';
+      spot.style.width=Math.max(12,r.width+pad*2)+'px';
+      spot.style.height=Math.max(12,r.height+pad*2)+'px';
+      spot.style.borderRadius=getComputedStyle(target).borderRadius||'12px';
+    }
+    card.querySelector('.mr104-tour-count').textContent=(index+1)+' / '+steps.length;
+    card.querySelector('.mr104-tour-title').textContent=step.title;
+    card.querySelector('.mr104-tour-text').textContent=step.text;
+    card.querySelector('.mr104-tour-progress span').style.width=((index+1)/steps.length*100)+'%';
+  }
+  function showStep(){
+    const step=steps[index];
+    const target=document.querySelector(step.target);
+    if(target){
+      target.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});
+      setTimeout(position,230);
+    }else position();
+    position();
+  }
+  function start(){
+    ensure();
+    index=0;
+    const modal=document.getElementById('newModal');
+    if(modal)modal.classList.add('open');
+    if(typeof window.switchNewTab==='function')window.switchNewTab('random');
+    else document.getElementById('newTabRandom')?.click();
+    overlay.classList.add('is-open');
+    document.body.style.overflow='hidden';
+    resizeHandler=()=>position();
+    window.addEventListener('resize',resizeHandler);
+    window.addEventListener('scroll',resizeHandler,true);
+    showStep();
+  }
+  function advance(){
+    if(index<steps.length-1){index++;if(index===4){if(typeof window.switchNewTab==='function')window.switchNewTab('list');}else if(index===7){if(typeof window.switchNewTab==='function')window.switchNewTab('random');}showStep();}
+    else finish();
+  }
+  function finish(){
+    if(!overlay)return;
+    overlay.classList.remove('is-open');
+    document.body.style.overflow='';
+    if(resizeHandler){window.removeEventListener('resize',resizeHandler);window.removeEventListener('scroll',resizeHandler,true);resizeHandler=null;}
+  }
+  window.openStartTutorial=start;
+  window.closeStartTutorial=finish;
+  window.startMiRankingInteractiveTutorial=start;
+  document.addEventListener('click',function(ev){
+    if(ev.target.closest('#emptyStartScore')){ev.preventDefault();ev.stopImmediatePropagation();start();}
+  },true);
+})();
+</script>
 </body>
 </html>
