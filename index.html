@@ -3426,7 +3426,7 @@ function refreshCoverLoaderStatus(){
   const pending=imgs.filter(img=>img.dataset.status==='pending').length;
   if(status){
     status.textContent=pending
-      ? `Portadas visibles listas: ${found}/${imgs.length} · el resto se carga al desplazarse`
+      ? ``
       : `Portadas listas: ${found}/${imgs.length}`;
   }
   if(progress)progress.style.width='100%';
