@@ -2645,7 +2645,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </div>
 </div></div></header><main>
 <section aria-label="Presentación de Mi Ranking" class="mir-hero"><span class="mir-hero-kicker">TU ANIME, TU CRITERIO</span><h1>Mi Ranking</h1><p>Tu colección, tus puntuaciones y tu recorrido por el anime.</p></section><div class="controls">
-<input aria-label="Buscar anime" autocomplete="new-password" data-1p-ignore="true" data-bwignore="true" data-lpignore="true" data-protonpass-ignore="true" data-dashlane-ignore="true" data-keeper-ignore="true" data-form-type="other" id="search" name="anime-search-query" placeholder="Buscar anime..." type="search" spellcheck="false"/>
+<input aria-label="Buscar anime" autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-lpignore="true" data-protonpass-ignore="true" data-dashlane-ignore="true" data-keeper-ignore="true" data-form-type="other" data-ignore-autofill="true" id="search" name="mr_catalog_filter" placeholder="Buscar anime..." readonly role="searchbox" type="search" spellcheck="false"/>
 <div aria-hidden="true" aria-live="polite" id="searchLoader" role="status"><span aria-hidden="true" class="search-spinner"></span><span>Buscando…</span></div>
 <button type="button" id="expand">Abrir/cerrar grupos</button>
 <button type="button" id="reset" title="Restablece los cambios guardados">Restablecer cambios</button>
@@ -2869,7 +2869,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="filters">
 <label class="filter-field search-field">
 <span class="filter-label">Buscar anime</span>
-<input id="newSearch" placeholder="Escribí un nombre..."/>
+<input id="newSearch" name="mr_new_catalog_filter" type="search" role="searchbox" autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-lpignore="true" data-protonpass-ignore="true" data-dashlane-ignore="true" data-keeper-ignore="true" data-form-type="other" data-ignore-autofill="true" readonly placeholder="Escribí un nombre..."/>
 </label>
 <label class="filter-field">
 <span class="filter-label filter-label-genre">Género</span>
@@ -11908,6 +11908,8 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
   function position(){
     if(!overlay?.classList.contains('is-open'))return;
     const step=steps[index],target=document.querySelector(step.target);
+    card.querySelector('.mr104-tour-title').textContent=step.title;
+    card.querySelector('.mr104-tour-text').textContent=step.text;
     if(!target||!target.getClientRects().length){spot.style.display='none';card.style.left='50%';card.style.top='50%';card.style.transform='translate(-50%,-50%)';card.dataset.place='below';return;}
     const r=target.getBoundingClientRect(),pad=5;
     spot.style.display='block';spot.style.left=Math.max(4,r.left-pad)+'px';spot.style.top=Math.max(4,r.top-pad)+'px';
@@ -11956,5 +11958,35 @@ $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.targe
   },true);
 })();
 </script>
+
+<script id="mr-search-autofill-guard">
+(function(){
+  function unlockSearch(input){
+    if(!input || input.dataset.autofillGuardReady==='1') return;
+    input.dataset.autofillGuardReady='1';
+    input.setAttribute('readonly','');
+    const unlock=function(){
+      input.removeAttribute('readonly');
+      input.removeEventListener('pointerdown',unlock);
+      input.removeEventListener('touchstart',unlock);
+      input.removeEventListener('keydown',unlock);
+      input.removeEventListener('focus',unlock);
+    };
+    input.addEventListener('pointerdown',unlock,{once:true});
+    input.addEventListener('touchstart',unlock,{once:true,passive:true});
+    input.addEventListener('keydown',unlock,{once:true});
+    input.addEventListener('focus',unlock,{once:true});
+  }
+  function apply(){
+    unlockSearch(document.getElementById('search'));
+    unlockSearch(document.getElementById('newSearch'));
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
+  else apply();
+  const observer=new MutationObserver(apply);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
