@@ -9339,7 +9339,8 @@ let socialProfileSyncErrorMessage='';
   }
 
   async function socialToggleLike(reviewId){
-    if(!sb||!session?.user)return;
+    if(!session?.user){document.getElementById('mirUserCorner')?.click();return}
+    if(!sb)return;
     const uid=socialUserId();
     const btn=document.querySelector(`[data-global-like="${CSS.escape(String(reviewId))}"]`);
     if(btn)btn.disabled=true;
@@ -9355,7 +9356,8 @@ let socialProfileSyncErrorMessage='';
   }
 
   async function socialToggleDislike(reviewId){
-    if(!sb||!session?.user)return;
+    if(!session?.user){document.getElementById('mirUserCorner')?.click();return}
+    if(!sb)return;
     const uid=socialUserId();
     const btn=document.querySelector(`[data-global-dislike="${CSS.escape(String(reviewId))}"]`);
     if(btn)btn.disabled=true;
@@ -9587,6 +9589,7 @@ let socialProfileSyncErrorMessage='';
       if(x.likedByMe)likedByMe.add(x.id);
       if(x.dislikedByMe)dislikedByMe.add(x.id);
     }
+    const canInteract=!!session?.user;
     const bySaga=new Map();
     for(const x of (reviews||[])){
       const key=String(x?.saga_id||'');
@@ -9600,7 +9603,7 @@ let socialProfileSyncErrorMessage='';
       const visible=Math.max(1,Number(socialGlobalExpanded[x.saga_id]||1));
       const shown=arr.slice(0,visible);
       const more=arr.length>1?`<div class="social-global-more">${shown.length<arr.length?`<button type="button" data-global-more="${socialEsc(x.saga_id)}">Mostrar 5 más</button>`:''}${visible>1?`<button type="button" data-global-less="${socialEsc(x.saga_id)}">Mostrar menos</button>`:''}</div>`:'';
-      const reviewHtml=shown.length?shown.map(rv=>{const p=rv.profile||{};const lc=likeCounts.get(rv.id)||0,dc=dislikeCounts.get(rv.id)||0,liked=likedByMe.has(rv.id),disliked=dislikedByMe.has(rv.id);return `<div class="social-global-review"><div class="social-global-review-head"><div class="social-global-review-user" data-global-review-user="${socialEsc(rv.user_id||'')}">${socialAvatar(p)}<span class="social-global-review-author-name">${socialEsc(p.display_name||p.username||'Usuario')}${window.miRankingBadges?.html?.(rv.user_id)||''}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div><div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${lc}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${dc}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div></div>`}).join(''):'<div class="social-empty" style="margin-top:8px">Todavía no hay opiniones para este anime.</div>';
+      const reviewHtml=shown.length?shown.map(rv=>{const p=rv.profile||{};const lc=likeCounts.get(rv.id)||0,dc=dislikeCounts.get(rv.id)||0,liked=likedByMe.has(rv.id),disliked=dislikedByMe.has(rv.id);return `<div class="social-global-review"><div class="social-global-review-head"><div class="social-global-review-user" data-global-review-user="${socialEsc(rv.user_id||'')}">${socialAvatar(p)}<span class="social-global-review-author-name">${socialEsc(p.display_name||p.username||'Usuario')}${window.miRankingBadges?.html?.(rv.user_id)||''}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${canInteract?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${lc}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${dc}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}</div>`}).join(''):'<div class="social-empty" style="margin-top:8px">Todavía no hay opiniones para este anime.</div>';
       return `<article class="social-global-anime-card" data-global-card="${socialEsc(x.saga_id)}"><div class="social-global-anime-head"><div class="social-global-anime-rank">#${i+1}</div><img data-social-cover="${socialEsc(n)}" src="${socialEsc(socialCoverUrl(n))}" alt=""><div class="social-global-anime-title-wrap"><div class="social-global-anime-name">${socialEsc(n)}</div><div class="social-global-anime-meta">${x.votes} voto${x.votes===1?'':'s'}</div></div><div class="social-global-anime-score">${Math.floor(x.score)}</div></div>${reviewHtml}${more}</article>`;
     }).join('');
     socialResolveCovers(el);
@@ -9610,13 +9613,13 @@ let socialProfileSyncErrorMessage='';
     const el=$('socialAnimeRank');
     if(!el)return;
     const query=String(q||'').trim().toLowerCase();
-    if(!sb||!session?.user){
-      el.innerHTML='<div class="social-empty">Iniciá sesión para ver el ranking global.</div>';
+    if(!sb){
+      el.innerHTML='<div class="social-empty">No se pudo conectar con el ranking global.</div>';
       return;
     }
 
     const minVotes=Math.max(1,Number($('socialAnimeMinVotes')?.value||1));
-    await socialLoadBlocks();
+    if(session?.user)await socialLoadBlocks();else socialCache.blocked=[];
     el.innerHTML='<div class="social-empty">Cargando ranking global…</div>';
 
     try{
@@ -9955,7 +9958,7 @@ let socialProfileSyncErrorMessage='';
         const liked=!!rv.likedByMe,disliked=!!rv.dislikedByMe;
         const wrap=document.createElement('div');
         wrap.className='social-global-review';
-        wrap.innerHTML=`<div class="social-global-review-head"><div class="social-global-review-user">${socialAvatar(p)}<span>${socialEsc(p.display_name||p.username||'Usuario')}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div><div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${Number(rv.likeCount)||0}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${Number(rv.dislikeCount)||0}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`;
+        wrap.innerHTML=`<div class="social-global-review-head"><div class="social-global-review-user">${socialAvatar(p)}<span>${socialEsc(p.display_name||p.username||'Usuario')}</span></div><span class="social-global-review-score">${Number(rv.score)||0}/100</span></div><div class="social-global-review-text">${socialEsc(rv.text||'')}</div>${session?.user?`<div class="social-global-review-actions"><button type="button" data-global-like="${socialEsc(rv.id)}" class="${liked?'active':''}">👍 ${Number(rv.likeCount)||0}</button><button type="button" class="dislike ${disliked?'active':''}" data-global-dislike="${socialEsc(rv.id)}">👎 ${Number(rv.dislikeCount)||0}</button><button type="button" data-social-report-review="${socialEsc(rv.id)}">🚩 Reportar</button><button type="button" class="danger" data-social-block-user="${socialEsc(rv.user_id)}">Bloquear</button></div>`:''}`;
         return wrap;
       };
       // Conservamos el botón existente y solamente insertamos las nuevas opiniones antes de él.
@@ -9969,7 +9972,7 @@ let socialProfileSyncErrorMessage='';
 $('socialPublicProfileCard')?.addEventListener('click',async e=>{const a=e.target.closest('[data-social-add]'),b=e.target.closest('[data-social-accept]'),fo=e.target.closest('[data-social-follow]'),un=e.target.closest('[data-social-unfollow]');if(a){await socialAddFriend(a.dataset.socialAdd);await socialViewProfile(a.dataset.socialAdd)}if(b){await socialAcceptFriend(b.dataset.socialAccept)}if(fo){await socialFollow(fo.dataset.socialFollow);await socialViewProfile(fo.dataset.socialFollow)}if(un){await socialUnfollow(un.dataset.socialUnfollow);await socialViewProfile(un.dataset.socialUnfollow)}});
     ['socialTopGenre','socialTopYear','socialTopQuarter'].forEach(id=>$(id)?.addEventListener('change',socialRenderTopPreview));$('socialCreateTop')?.addEventListener('click',socialCreateTop);$('socialCopyTop')?.addEventListener('click',socialCopyTop);
   }
-  document.addEventListener('click',async ev=>{const reportSubmit=ev.target?.closest?.('#mirReportSubmit');if(reportSubmit){ev.preventDefault();ev.stopPropagation();await submitReport();return}const reportUser=ev.target?.closest?.('[data-social-report-user]'),reportReview=ev.target?.closest?.('[data-social-report-review]'),reportReply=ev.target?.closest?.('[data-social-report-reply]'),block=ev.target?.closest?.('[data-social-block-user]'),unblock=ev.target?.closest?.('[data-social-unblock-user]');if(reportUser){ev.preventDefault();ev.stopPropagation();openReportModal({type:'user',id:reportUser.dataset.socialReportUser});return}if(reportReview){ev.preventDefault();ev.stopPropagation();openReportModal({type:'review',id:reportReview.dataset.socialReportReview});return}if(reportReply){ev.preventDefault();ev.stopPropagation();openReportModal({type:'reply',id:reportReply.dataset.socialReportReply});return}if(block){ev.preventDefault();ev.stopPropagation();if(confirm('¿Bloquear a este usuario? No verás su contenido social.')){const ok=await socialBlockUser(block.dataset.socialBlockUser);await socialLoadBlocks();if(ok){if(socialCache.selectedSagaId)await socialLoadReviews(socialCache.selectedSagaId);else await socialRenderAnimeRankingGlobal($('socialAnimeSearch')?.value||'')}}return}if(unblock){ev.preventDefault();ev.stopPropagation();if(confirm('¿Desbloquear a este usuario?')){const ok=await socialUnblockUser(unblock.dataset.socialUnblockUser);await socialLoadBlocks();if(ok){await socialRenderBlockedUsers();if(socialCache.selectedSagaId)await socialLoadReviews(socialCache.selectedSagaId);else await socialRenderAnimeRankingGlobal($('socialAnimeSearch')?.value||'')}}return}},true);
+  document.addEventListener('click',async ev=>{const reportSubmit=ev.target?.closest?.('#mirReportSubmit');if(reportSubmit){ev.preventDefault();ev.stopPropagation();await submitReport();return}const reportUser=ev.target?.closest?.('[data-social-report-user]'),reportReview=ev.target?.closest?.('[data-social-report-review]'),reportReply=ev.target?.closest?.('[data-social-report-reply]'),block=ev.target?.closest?.('[data-social-block-user]'),unblock=ev.target?.closest?.('[data-social-unblock-user]');if(reportUser){ev.preventDefault();ev.stopPropagation();if(!session?.user){document.getElementById('mirUserCorner')?.click();return}openReportModal({type:'user',id:reportUser.dataset.socialReportUser});return}if(reportReview){ev.preventDefault();ev.stopPropagation();if(!session?.user){document.getElementById('mirUserCorner')?.click();return}openReportModal({type:'review',id:reportReview.dataset.socialReportReview});return}if(reportReply){ev.preventDefault();ev.stopPropagation();openReportModal({type:'reply',id:reportReply.dataset.socialReportReply});return}if(block){ev.preventDefault();ev.stopPropagation();if(confirm('¿Bloquear a este usuario? No verás su contenido social.')){const ok=await socialBlockUser(block.dataset.socialBlockUser);await socialLoadBlocks();if(ok){if(socialCache.selectedSagaId)await socialLoadReviews(socialCache.selectedSagaId);else await socialRenderAnimeRankingGlobal($('socialAnimeSearch')?.value||'')}}return}if(unblock){ev.preventDefault();ev.stopPropagation();if(!session?.user){document.getElementById('mirUserCorner')?.click();return}if(confirm('¿Desbloquear a este usuario?')){const ok=await socialUnblockUser(unblock.dataset.socialUnblockUser);await socialLoadBlocks();if(ok){await socialRenderBlockedUsers();if(socialCache.selectedSagaId)await socialLoadReviews(socialCache.selectedSagaId);else await socialRenderAnimeRankingGlobal($('socialAnimeSearch')?.value||'')}}return}},true);
   // Refuerzo de eventos sociales: delegación global para que los botones
   // dinámicos sigan funcionando aunque la lista de usuarios se vuelva a renderizar.
   document.addEventListener('click',async (ev)=>{
