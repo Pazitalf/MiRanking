@@ -1071,7 +1071,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 /* ===== Avatar de usuario flotante ===== */
 #mirUserCornerWrap{position:fixed;top:14px;right:16px;z-index:1500;display:flex;align-items:center;gap:7px}
 #mirUserCorner{
-  position:relative;width:auto;min-width:150px;max-width:230px;height:46px;padding:4px 12px 4px 5px;border-radius:24px;overflow:hidden;
+  position:relative;width:auto;min-width:210px;max-width:340px;height:46px;padding:4px 12px 4px 5px;border-radius:24px;overflow:hidden;
   border:1px solid rgba(120,174,240,.42);
   background:linear-gradient(180deg,rgba(18,31,49,.96),rgba(9,17,29,.96));
   color:#eef6ff;font-weight:850;font-size:12px;
@@ -1110,8 +1110,9 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 #mirUserMenu button.mir-menu-danger{color:#ffadb9}
 #mirUserMenu button.mir-menu-danger:hover{background:rgba(224,82,105,.10);color:#ffc3cb}
 @media(max-width:760px){
-  #mirUserCornerWrap{top:10px;right:10px;gap:6px}
-  #mirUserCorner{min-width:0;width:min(190px,52vw);height:42px;padding:3px 10px 3px 4px;border-radius:22px;font-size:11px}
+  #mirUserCornerWrap{top:10px;right:10px;gap:6px;max-width:calc(100vw - 20px)}
+
+  #mirUserCorner{min-width:0;width:min(280px,68vw);max-width:280px;height:42px;padding:3px 10px 3px 4px;border-radius:22px;font-size:11px}
   #mirUserCorner .mir-user-corner-avatar{flex-basis:34px;width:34px;height:34px;font-size:13px}
   #mirUserMenu{top:46px;width:min(218px,calc(100vw - 20px))}
 }
