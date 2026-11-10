@@ -3026,7 +3026,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109', { cache: 'force-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109-generos', { cache: 'no-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
@@ -4227,8 +4227,13 @@ function mergeCatalogBySeries(){
     const genres=[];
     const years=[];
     const quarters=[];
+    const mainGenres=[];
 
     for(const item of entries){
+      // El género principal curado de MiRanking es la categoría que alimenta
+      // los filtros de Puntuar. Se conserva `genres` original para metadatos.
+      const mainGenre=String(item.mainGenre||'').trim();
+      if(mainGenre && !mainGenres.includes(mainGenre)) mainGenres.push(mainGenre);
       for(const genre of (item.genres||[])){
         if(genre && !genres.includes(genre)) genres.push(genre);
       }
@@ -4258,6 +4263,7 @@ function mergeCatalogBySeries(){
       name,
       seriesKey:key,
       genres,
+      mainGenre:mainGenres[0]||'',
       year:latest.year||'',
       quarter:latest.quarter||'',
       years,
@@ -4290,7 +4296,7 @@ let selectedRandom=null;
 
 // Estos filtros son independientes, pero se combinan con AND.
 function fillFilterOptions(){
-  const genres=[...new Set(CATALOG.flatMap(x=>x.genres||[]).map(genreLabel))]
+  const genres=[...new Set(CATALOG.map(x=>String(x.mainGenre||'').trim()))]
     .filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
   const years=[...new Set(CATALOG.map(x=>Number(x.year)).filter(Number.isFinite))].sort((a,b)=>b-a);
   const quarters=[...new Set(CATALOG.map(x=>x.quarter).filter(Boolean))];
@@ -4684,7 +4690,7 @@ function filteredNew(){
   // original para que todas sus temporadas abran el mismo menú de puntuación.
   for(const saga of getNewCatalog()){
     const textMatches=!q || saga.searchText.includes(q);
-    const genreMatches=!g || (saga.genres||[]).some(z=>genreLabel(z)===genreLabel(g));
+    const genreMatches=!g || saga.mainGenre===g;
     if(!textMatches||!genreMatches)continue;
     for(const entry of (saga.entries||[])){
       const entryYear=catalogEntryYear(entry);
@@ -6090,63 +6096,22 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     document.getElementById('pWorst').textContent=count?values[0]:'—';
     document.getElementById('pMedian').textContent=count?median:'—';
 
-    // Clasificación temática exclusiva de Estadísticas: no modifica el catálogo ni sus géneros originales.
     const catalogMeta=new Map();
     for(const item of (CATALOG||[])){
       const key=item.seriesKey || seriesKey(item.name);
       if(!key) continue;
-      const prev=catalogMeta.get(key)||{genres:[],names:[]};
+      const prev=catalogMeta.get(key)||{genres:[]};
       for(const g of (item.genres||[])){const label=genreLabel(g);if(label&&!prev.genres.includes(label))prev.genres.push(label)}
-      if(item.name&&!prev.names.includes(item.name))prev.names.push(item.name);
       catalogMeta.set(key,prev);
     }
-    const normStatText=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-    const statManual={
-      'kaguya sama love is war':['Romcom','Escolar'],
-      'kaguya sama wa kokurasetai':['Romcom','Escolar'],
-      'horimiya':['Romcom','Escolar'],
-      'wotakoi love is hard for otaku':['Romcom']
-    };
-    const classifyStatsAnime=(name,rawGenres)=>{
-      const gs=new Set(rawGenres.map(normStatText));
-      const has=(...terms)=>terms.some(t=>gs.has(normStatText(t)));
-      const title=normStatText(name);
-      const manual=Object.entries(statManual).find(([key])=>title===key||title.startsWith(key+' '))?.[1]||[];
-      const out=new Set(manual);
-      const romance=has('romance');
-      const comedy=has('comedy','comedia');
-      if(romance&&comedy)out.add('Romcom');
-      else if(romance)out.add('Romance');
-      if(has('school','escolar'))out.add('Escolar');
-      // Shonen exige demografía shonen y acción/combate; no basta la etiqueta demográfica.
-      if(has('shounen','shonen')&&has('action','accion','martial arts','artes marciales'))out.add('Shonen');
-      // Seinen se asigna por la etiqueta demográfica explícita; no se infiere solo por ser oscuro o violento.
-      if(has('seinen'))out.add('Seinen');
-      if(has('shoujo','shojo'))out.add('Shoujo');
-      if(has('military','militar'))out.add('Militar');
-      if(has('slice of life','life comedy'))out.add('Slice of Life');
-      if(has('ecchi'))out.add('Ecchi');
-      // Casi H requiere una etiqueta explícita; no se deduce de ecchi ni de harem.
-      if(has('casi h','borderline hentai','hentai'))out.add('Casi H');
-      if(has('sports','deportes','sport'))out.add('Deportes');
-      if(has('isekai'))out.add('Isekai');
-      if(has('idol'))out.add('Idol');
-      if(has('drama'))out.add('Drama');
-      if(has('mecha','mechas'))out.add('Mechas');
-      if(has('zombie','zombies','living dead'))out.add('Zombies');
-      return out;
-    };
-    const statCategoryOrder=['Romcom','Romance','Escolar','Shonen','Seinen','Shoujo','Militar','Slice of Life','Ecchi','Casi H','Deportes','Isekai','Idol','Drama','Mechas','Zombies'];
-    const categoryCounts=Object.fromEntries(statCategoryOrder.map(category=>[category,0]));
+    const genres={};
     scored.forEach(x=>{
-      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name))||{genres:[],names:[]};
-      const raw=[...(x.genres||[]),...(meta.genres||[])];
-      const categories=classifyStatsAnime(x.name||meta.names?.[0],raw);
-      categories.forEach(category=>{if(Object.prototype.hasOwnProperty.call(categoryCounts,category))categoryCounts[category]++});
+      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name))||{genres:[]};
+      [...new Set([...(x.genres||[]),...(meta.genres||[])].map(genreLabel).filter(Boolean))].forEach(g=>genres[g]=(genres[g]||0)+1);
     });
-    const genreRows=statCategoryOrder.map(category=>[category,categoryCounts[category]]);
-    const maxG=Math.max(1,...genreRows.map(([,n])=>n));
-    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('');
+    const genreRows=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxG=genreRows[0]?.[1]||1;
+    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('')||'<div class="proto-note">Todavía no hay suficientes datos.</div>';
 
     const buckets=[[95,100],[90,94],[85,89],[80,84],[75,79],[70,74],[0,69]];
     const sb=buckets.map(([lo,hi])=>[`${lo}–${hi}`,scored.filter(x=>x.score>=lo&&x.score<=hi).length]);
