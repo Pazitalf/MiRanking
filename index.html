@@ -3026,7 +3026,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261110-generos-v2', { cache: 'no-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109-generos', { cache: 'no-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
@@ -6096,18 +6096,20 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     document.getElementById('pWorst').textContent=count?values[0]:'—';
     document.getElementById('pMedian').textContent=count?median:'—';
 
+    // Las estadísticas de género usan la categoría principal curada de MiRanking,
+    // no los géneros múltiples originales de AniList ni los guardados en puntuaciones antiguas.
     const catalogMeta=new Map();
     for(const item of (CATALOG||[])){
       const key=item.seriesKey || seriesKey(item.name);
       if(!key) continue;
-      const prev=catalogMeta.get(key)||{genres:[]};
-      for(const g of (item.genres||[])){const label=genreLabel(g);if(label&&!prev.genres.includes(label))prev.genres.push(label)}
-      catalogMeta.set(key,prev);
+      const mainGenre=String(item.mainGenre||'').trim();
+      if(mainGenre && !catalogMeta.has(key)) catalogMeta.set(key,{mainGenre});
     }
     const genres={};
     scored.forEach(x=>{
-      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name))||{genres:[]};
-      [...new Set([...(x.genres||[]),...(meta.genres||[])].map(genreLabel).filter(Boolean))].forEach(g=>genres[g]=(genres[g]||0)+1);
+      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name));
+      const g=meta?.mainGenre;
+      if(g) genres[g]=(genres[g]||0)+1;
     });
     const genreRows=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const maxG=genreRows[0]?.[1]||1;
