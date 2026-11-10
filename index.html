@@ -12213,7 +12213,7 @@ const panel=document.createElement('section');panel.id='mrModePanel';panel.setAt
 bar.addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;setMode(b.dataset.mode)});
 panel.addEventListener('click',onPanelClick);panel.addEventListener('input',onPanelInput);panel.addEventListener('change',onPanelChange);panel.addEventListener('dragstart',onDragStart);panel.addEventListener('dragover',onDragOver);panel.addEventListener('drop',onDrop);
 }
-function setMode(mode){if(!['list','tier','cards','genre','lists'].includes(mode))return;prefs.mode=mode;savePrefs();document.querySelectorAll('#mrModesBar [data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));const panel=$('mrModePanel');panel.classList.toggle('active',mode!=='list');const controls=$('search')?.closest('.controls'),legend=document.querySelector('.legend'),loader=$('coverLoader'),groups=$('groups'),empty=$('emptyStartScore');[controls,legend,loader,groups,empty].forEach(el=>{if(el)el.style.display=mode==='list'?'':'none'});if(mode==='list'){window.render?.();return}renderMode();window.scrollTo({top:0,behavior:'smooth'})}
+function setMode(mode){if(!['list','tier','cards','genre','lists'].includes(mode))return;if(mode!=='lists'){socialMounted=false;if(socialMountObserver){socialMountObserver.disconnect();socialMountObserver=null}if(socialMountTimer){clearTimeout(socialMountTimer);socialMountTimer=null}}prefs.mode=mode;savePrefs();document.querySelectorAll('#mrModesBar [data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));const panel=$('mrModePanel');panel.classList.toggle('active',mode!=='list');const controls=$('search')?.closest('.controls'),legend=document.querySelector('.legend'),loader=$('coverLoader'),groups=$('groups'),empty=$('emptyStartScore');[controls,legend,loader,groups,empty].forEach(el=>{if(el)el.style.display=mode==='list'?'':'none'});if(mode==='list'){window.render?.();return}renderMode();window.scrollTo({top:0,behavior:'smooth'})}
 function toolbar(search=true){return `<div class="mrm-toolbar">${search?'<input type="search" id="mrmSearch" placeholder="Buscar anime..." autocomplete="off">':''}<select id="mrmGenre"><option value="">Todos los géneros</option>${[...new Set(allAnime().flatMap(x=>x.genres||[]))].sort().map(x=>`<option>${esc(x)}</option>`).join('')}</select><select id="mrmYear"><option value="">Todos los años</option>${[...new Set(allAnime().map(x=>x.year).filter(Boolean))].sort((a,b)=>b-a).map(x=>`<option>${esc(x)}</option>`).join('')}</select><select id="mrmQuarter"><option value="">Todas las temporadas</option>${[...new Set(allAnime().map(x=>x.quarter).filter(Boolean))].map(x=>`<option>${esc(x)}</option>`).join('')}</select></div>`}
 function scoredCatalog(){const rows=scored();const map=new Map();rows.forEach(r=>map.set(keyOf(r),r));return allAnime().map(c=>({c,r:map.get(keyOf(c))})).filter(x=>x.r)}
 function renderMode(){const mode=prefs.mode;if(mode==='tier')renderTierHome();else if(mode==='cards')renderCards();else if(mode==='genre')renderGenres();else if(mode==='lists')renderLists();}
@@ -12228,7 +12228,19 @@ function tierRowHtml(row,i){return `<div class="mrm-tier-row"><div class="mrm-ti
 function drawTierRows(){const host=$('mrmTierRows'),t=tierLists.find(x=>x.id===activeTier);if(host&&t)host.innerHTML=t.tiers.map(tierRowHtml).join('');host?.querySelectorAll('img[data-cover]').forEach(i=>cover(i.dataset.cover,i))}
 function drawTierLibrary(){const host=$('mrmLibGrid');if(!host)return;let rows=libMode==='scored'?scoredCatalog().map(x=>x.c):allAnime();const q=($('mrmLibSearch')?.value||'').toLowerCase(),g=$('mrmLibGenre')?.value||'',y=$('mrmLibYear')?.value||'',qu=$('mrmLibQuarter')?.value||'';rows=rows.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(!g||(c.genres||[]).includes(g))&&(!y||String(c.year)===y)&&(!qu||c.quarter===qu));host.innerHTML=rows.slice(0,600).map(c=>`<button class="mrm-lib-item" draggable="true" data-lib-add="${esc(c.name)}"><img loading="lazy" data-cover="${esc(c.name)}" alt=""><span>${esc(c.name)}</span></button>`).join('')||'<div class="mrm-empty">No se encontraron anime.</div>';host.querySelectorAll('img[data-cover]').forEach(i=>cover(i.dataset.cover,i))}
 function renderLists(){const panel=$('mrModePanel');panel.innerHTML=`<div class="mrm-head"><div><h2>Listas</h2><p class="mrm-sub">Creá tus listas y descubrí las de la comunidad.</p></div><div class="mrm-toolbar"><button class="mrm-btn primary" data-social-list-tab="mine">Mis listas</button><button class="mrm-btn" data-social-list-tab="explore">Explorar listas</button></div></div><div class="mrm-list-mount" id="mrmListMount"><div class="mrm-empty">Cargando el sistema de listas…</div></div>`;mountSocialLists();}
-function mountSocialLists(){const host=$('mrmListMount'),sec=$('mr120ListsSection');if(sec&&host){sec.classList.remove('friends-main-view');sec.hidden=false;sec.style.display='block';host.replaceChildren(sec);const heading=sec.querySelector('#mr120ListsHeading');if(heading)heading.textContent='Mis listas y listas de la comunidad';const tabs=sec.querySelector('#mr120ListTabs');if(tabs)tabs.style.display='';return}setTimeout(()=>{if(prefs.mode==='lists')mountSocialLists()},500)}
+let socialMountObserver=null,socialMountTimer=null,socialMounted=false;
+function mountSocialLists(){
+ const host=$('mrmListMount'),sec=$('mr120ListsSection');
+ if(!host||!sec||socialMounted)return;
+ socialMounted=true;
+ if(socialMountObserver){socialMountObserver.disconnect();socialMountObserver=null}
+ if(socialMountTimer){clearTimeout(socialMountTimer);socialMountTimer=null}
+ sec.classList.remove('friends-main-view');sec.hidden=false;sec.style.display='block';
+ if(sec.parentElement!==host)host.replaceChildren(sec);
+ const heading=sec.querySelector('#mr120ListsHeading');if(heading)heading.textContent='Mis listas y listas de la comunidad';
+ const tabs=sec.querySelector('#mr120ListTabs');if(tabs)tabs.style.display='';
+}
+
 function openMrmEditor({title,fields,onSave}){
  const old=document.getElementById('mrmEditorBackdrop');old?.remove();
  const backdrop=document.createElement('div');backdrop.className='mrm-modal-backdrop';backdrop.id='mrmEditorBackdrop';
@@ -12257,7 +12269,22 @@ const card=e.target.closest('[data-open-anime]');if(card){const name=card.datase
 function onPanelInput(e){if(e.target.id==='mrmSearch'){prefs.mode==='genre'?drawGenre():drawCards()}if(e.target.id==='mrmLibSearch')drawTierLibrary()}
 function onPanelChange(e){if(['mrmGenre','mrmYear','mrmQuarter','mrmSort','mrmCardSize'].includes(e.target.id)){if(e.target.id==='mrmCardSize'){prefs.cardSize=e.target.value;savePrefs();$('mrmCardGrid')?.setAttribute('data-size',prefs.cardSize)}if(prefs.mode==='genre')drawGenre();else drawCards()}if(['mrmGenreSort'].includes(e.target.id))drawGenre();if(['mrmLibGenre','mrmLibYear','mrmLibQuarter'].includes(e.target.id))drawTierLibrary()}
 let dragData=null;function onDragStart(e){const img=e.target.closest('[data-tier-item]');const lib=e.target.closest('[data-lib-add]');if(img){dragData={name:img.dataset.tierItem,from:Number(img.dataset.fromTier),library:false};e.dataTransfer.setData('text/plain',JSON.stringify(dragData));e.dataTransfer.effectAllowed='move'}else if(lib){dragData={name:lib.dataset.libAdd,from:null,library:true};e.dataTransfer.setData('text/plain',JSON.stringify(dragData));e.dataTransfer.effectAllowed='copy'}}function onDragOver(e){if(e.target.closest('[data-tier-drop]')){e.preventDefault();e.target.closest('[data-tier-drop]').classList.add('dragover')}}function onDrop(e){const dest=e.target.closest('[data-tier-drop]');if(!dest)return;e.preventDefault();document.querySelectorAll('.mrm-tier-items').forEach(x=>x.classList.remove('dragover'));let d=dragData;try{d=d||JSON.parse(e.dataTransfer.getData('text/plain'))}catch(_){};if(!d)return;const t=tierLists.find(x=>x.id===activeTier);if(!t)return;const from=d.library?null:t.tiers[d.from],to=t.tiers[Number(dest.dataset.tierDrop)];if(!to)return;if(from)from.items=from.items.filter(n=>n!==d.name);if(!to.items.includes(d.name)){const target=e.target.closest('[data-tier-item]');if(target&&Number(target.dataset.fromTier)===Number(dest.dataset.tierDrop)){const at=to.items.indexOf(target.dataset.tierItem);to.items.splice(Math.max(0,at),0,d.name)}else to.items.push(d.name)}dragData=null;saveTiers();drawTierRows()}
-function observeLists(){const tryMount=()=>{if(prefs.mode==='lists'&&$('mrModePanel')?.classList.contains('active'))mountSocialLists()};const obs=new MutationObserver(tryMount);obs.observe(document.body,{childList:true,subtree:true});setTimeout(tryMount,1000)}
+function observeLists(){
+ const tryMount=()=>{
+  if(prefs.mode!=='lists'||!$('mrModePanel')?.classList.contains('active'))return;
+  const sec=$('mr120ListsSection'),host=$('mrmListMount');
+  if(sec&&host){mountSocialLists();return}
+  if(!socialMountObserver){
+   socialMountObserver=new MutationObserver(()=>{
+    if(prefs.mode!=='lists'||!$('mrModePanel')?.classList.contains('active')){socialMountObserver?.disconnect();socialMountObserver=null;return}
+    if($('mr120ListsSection')&&$('mrmListMount'))mountSocialLists();
+   });
+   socialMountObserver.observe(document.body,{childList:true,subtree:true});
+  }
+ };
+ tryMount();
+ if(prefs.mode==='lists'&&!socialMounted&&!socialMountTimer)socialMountTimer=setTimeout(()=>{socialMountTimer=null;tryMount()},1200);
+}
 function init(){ensureUI();if(!$('mrModesBar'))return;observeLists();setMode(prefs.mode);if(typeof catalogReady!=='undefined'&&catalogReady&&typeof catalogReady.then==='function')catalogReady.then(()=>{if(prefs.mode==='cards')drawCards();else if(prefs.mode==='genre')renderGenres();else if(prefs.mode==='tier'&&activeTier)drawTierLibrary()});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
