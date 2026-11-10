@@ -2730,6 +2730,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </div>
 <div class="proto-section stats-section" id="badgeProgressSection"><h3 class="minimal-section-heading icon-label" data-icon="progress">Progreso de insignia</h3><div class="badge-progress-content" id="badgeProgressContent"><div class="proto-note">Cargando tu progreso de insignia…</div></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="genres">Tus géneros</h3><div class="proto-bars" id="genreBars"></div></div>
+<div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="genres">Tus 7 combinaciones más vistas</h3><div class="proto-bars" id="genreSubgenreBars"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="distribution">Distribución de puntuaciones</h3><div class="proto-bars" id="scoreBars"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="top">Tu Top 10</h3><div class="top-list" id="topList"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="bottom">Los 5 con menor puntuación</h3><div class="top-list" id="bottomList"></div></div>
@@ -3026,7 +3027,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109-generos', { cache: 'no-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109', { cache: 'force-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
@@ -4227,13 +4228,8 @@ function mergeCatalogBySeries(){
     const genres=[];
     const years=[];
     const quarters=[];
-    const mainGenres=[];
 
     for(const item of entries){
-      // El género principal curado de MiRanking es la categoría que alimenta
-      // los filtros de Puntuar. Se conserva `genres` original para metadatos.
-      const mainGenre=String(item.mainGenre||'').trim();
-      if(mainGenre && !mainGenres.includes(mainGenre)) mainGenres.push(mainGenre);
       for(const genre of (item.genres||[])){
         if(genre && !genres.includes(genre)) genres.push(genre);
       }
@@ -4263,7 +4259,6 @@ function mergeCatalogBySeries(){
       name,
       seriesKey:key,
       genres,
-      mainGenre:mainGenres[0]||'',
       year:latest.year||'',
       quarter:latest.quarter||'',
       years,
@@ -4296,7 +4291,7 @@ let selectedRandom=null;
 
 // Estos filtros son independientes, pero se combinan con AND.
 function fillFilterOptions(){
-  const genres=[...new Set(CATALOG.map(x=>String(x.mainGenre||'').trim()))]
+  const genres=[...new Set(CATALOG.flatMap(x=>x.genres||[]).map(genreLabel))]
     .filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
   const years=[...new Set(CATALOG.map(x=>Number(x.year)).filter(Number.isFinite))].sort((a,b)=>b-a);
   const quarters=[...new Set(CATALOG.map(x=>x.quarter).filter(Boolean))];
@@ -4690,7 +4685,7 @@ function filteredNew(){
   // original para que todas sus temporadas abran el mismo menú de puntuación.
   for(const saga of getNewCatalog()){
     const textMatches=!q || saga.searchText.includes(q);
-    const genreMatches=!g || saga.mainGenre===g;
+    const genreMatches=!g || (saga.genres||[]).some(z=>genreLabel(z)===genreLabel(g));
     if(!textMatches||!genreMatches)continue;
     for(const entry of (saga.entries||[])){
       const entryYear=catalogEntryYear(entry);
@@ -6096,25 +6091,46 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     document.getElementById('pWorst').textContent=count?values[0]:'—';
     document.getElementById('pMedian').textContent=count?median:'—';
 
-    // Las estadísticas de género usan la categoría principal curada de MiRanking,
-    // no los géneros múltiples originales de AniList ni los guardados en puntuaciones antiguas.
+    // Estadísticas basadas en la clasificación principal del catálogo y sus subgéneros.
     const catalogMeta=new Map();
     for(const item of (CATALOG||[])){
       const key=item.seriesKey || seriesKey(item.name);
       if(!key) continue;
-      const mainGenre=String(item.mainGenre||'').trim();
-      if(mainGenre && !catalogMeta.has(key)) catalogMeta.set(key,{mainGenre});
+      const prev=catalogMeta.get(key)||{mainGenre:'',genres:[],names:[]};
+      if(item.mainGenre && !prev.mainGenre) prev.mainGenre=String(item.mainGenre);
+      for(const g of (item.genres||[])){
+        const label=String(g||'').trim();
+        if(label && !prev.genres.some(x=>x.toLowerCase()===label.toLowerCase())) prev.genres.push(label);
+      }
+      if(item.name&&!prev.names.includes(item.name))prev.names.push(item.name);
+      catalogMeta.set(key,prev);
     }
-    const statCategoryOrder=['Romcom','Shonen','Seinen','Romance','Militar','Mecha','Idol','Deportes','Ecchi','Drama','Comedia','Infantil','Isekai','Casi H','Slice of Life'];
-    const genres=Object.fromEntries(statCategoryOrder.map(category=>[category,0]));
+    const mainCategories=['Romcom','Shonen','Seinen','Romance','Militar','Mecha','Idol','Deportes','Ecchi','Drama','Comedia','Infantil','Isekai','Casi H','Slice of Life'];
+    const categoryCounts=Object.fromEntries(mainCategories.map(category=>[category,0]));
+    const comboCounts=new Map();
     scored.forEach(x=>{
-      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name));
-      const g=meta?.mainGenre;
-      if(g && Object.prototype.hasOwnProperty.call(genres,g)) genres[g]++;
+      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name))||{mainGenre:'',genres:[],names:[]};
+      const main=mainCategories.includes(meta.mainGenre)?meta.mainGenre:'Sin categoría';
+      if(main!=='Sin categoría') categoryCounts[main]++;
+      const subs=[...new Set((meta.genres||[]).map(g=>String(g).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+      if(!subs.length) return;
+      const key=main+'||'+subs.join('|');
+      const row=comboCounts.get(key)||{main,subs,count:0};
+      row.count++;
+      comboCounts.set(key,row);
     });
-    const genreRows=statCategoryOrder.map(category=>[category,genres[category]]).sort((a,b)=>b[1]-a[1]||statCategoryOrder.indexOf(a[0])-statCategoryOrder.indexOf(b[0]));
+    const genreRows=mainCategories.map(category=>[category,categoryCounts[category]]).sort((a,b)=>b[1]-a[1]||mainCategories.indexOf(a[0])-mainCategories.indexOf(b[0]));
     const maxG=Math.max(1,...genreRows.map(([,n])=>n));
     document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('');
+    const comboRows=[...comboCounts.values()].sort((a,b)=>b.count-a.count||a.main.localeCompare(b.main,'es')||a.subs.join(',').localeCompare(b.subs.join(','),'es')).slice(0,7);
+    const comboHost=document.getElementById('genreSubgenreBars');
+    if(comboHost){
+      const maxCombo=Math.max(1,...comboRows.map(x=>x.count));
+      comboHost.innerHTML=comboRows.length?comboRows.map(row=>{
+        const label=`${row.main} · ${row.subs.join(', ')}`;
+        return `<div class="proto-bar-row"><span title="${escDetail(label)}">${escDetail(label)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(row.count/maxCombo*100)}%"></div></div><b>${row.count}</b></div>`;
+      }).join(''):'<div class="proto-note">Todavía no hay combinaciones para mostrar.</div>';
+    }
 
     const buckets=[[95,100],[90,94],[85,89],[80,84],[75,79],[70,74],[0,69]];
     const sb=buckets.map(([lo,hi])=>[`${lo}–${hi}`,scored.filter(x=>x.score>=lo&&x.score<=hi).length]);
