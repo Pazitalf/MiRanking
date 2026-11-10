@@ -2730,7 +2730,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </div>
 <div class="proto-section stats-section" id="badgeProgressSection"><h3 class="minimal-section-heading icon-label" data-icon="progress">Progreso de insignia</h3><div class="badge-progress-content" id="badgeProgressContent"><div class="proto-note">Cargando tu progreso de insignia…</div></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="genres">Tus géneros</h3><div class="proto-bars" id="genreBars"></div></div>
-<div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="genres">Tus 7 combinaciones más vistas</h3><div class="proto-bars" id="genreSubgenreBars"></div></div>
+<div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="genres">Tus 7 combinaciones género + subgénero más vistas</h3><div class="proto-bars" id="genreSubgenreBars"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="distribution">Distribución de puntuaciones</h3><div class="proto-bars" id="scoreBars"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="top">Tu Top 10</h3><div class="top-list" id="topList"></div></div>
 <div class="proto-section stats-section"><h3 class="minimal-section-heading icon-label" data-icon="bottom">Los 5 con menor puntuación</h3><div class="top-list" id="bottomList"></div></div>
@@ -6091,45 +6091,79 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     document.getElementById('pWorst').textContent=count?values[0]:'—';
     document.getElementById('pMedian').textContent=count?median:'—';
 
-    // Estadísticas basadas en la clasificación principal del catálogo y sus subgéneros.
+    // Estadísticas basadas en la categoría principal de MiRanking y los géneros
+    // descriptivos del catálogo. Se indexa por saga y también por título para
+    // no perder coincidencias cuando el registro puntuado no trae seriesKey.
     const catalogMeta=new Map();
-    for(const item of (CATALOG||[])){
-      const key=item.seriesKey || seriesKey(item.name);
-      if(!key) continue;
-      const prev=catalogMeta.get(key)||{mainGenre:'',genres:[],names:[]};
-      if(item.mainGenre && !prev.mainGenre) prev.mainGenre=String(item.mainGenre);
-      for(const g of (item.genres||[])){
-        const label=String(g||'').trim();
-        if(label && !prev.genres.some(x=>x.toLowerCase()===label.toLowerCase())) prev.genres.push(label);
-      }
-      if(item.name&&!prev.names.includes(item.name))prev.names.push(item.name);
-      catalogMeta.set(key,prev);
-    }
+    const catalogMetaByTitle=new Map();
     const mainCategories=['Romcom','Shonen','Seinen','Romance','Militar','Mecha','Idol','Deportes','Ecchi','Drama','Comedia','Infantil','Isekai','Casi H','Slice of Life'];
+    const mergeMeta=(target,item)=>{
+      if(item.mainGenre && !target.mainGenre) target.mainGenre=String(item.mainGenre).trim();
+      for(const g of (Array.isArray(item.genres)?item.genres:[])){
+        const label=String(g||'').trim();
+        if(label && !target.genres.some(x=>x.toLocaleLowerCase('es')===label.toLocaleLowerCase('es'))) target.genres.push(label);
+      }
+      return target;
+    };
+    for(const item of (Array.isArray(CATALOG)?CATALOG:[])){
+      const meta={mainGenre:'',genres:[]};
+      const key=seriesKey(item.name);
+      if(key){
+        const aggregate=catalogMeta.get(key)||{mainGenre:'',genres:[]};
+        catalogMeta.set(key,mergeMeta(aggregate,item));
+      }
+      for(const title of [item.name,...String(item.alt||'').split('|')].filter(Boolean)){
+        const titleKey=coverNorm(title);
+        if(!titleKey) continue;
+        const aggregate=catalogMetaByTitle.get(titleKey)||{mainGenre:'',genres:[]};
+        catalogMetaByTitle.set(titleKey,mergeMeta(aggregate,item));
+      }
+    }
     const categoryCounts=Object.fromEntries(mainCategories.map(category=>[category,0]));
+    // Cada combinación es una pareja categoría principal + subgénero.
+    // No agrupamos la lista completa de tags: eso generaba etiquetas larguísimas
+    // y combinaciones casi únicas que no representaban tendencias.
     const comboCounts=new Map();
+    const seenSeriesForCategory=new Set();
+    const seenSeriesForCombo=new Set();
     scored.forEach(x=>{
-      const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name))||{mainGenre:'',genres:[],names:[]};
-      const main=mainCategories.includes(meta.mainGenre)?meta.mainGenre:'Sin categoría';
-      if(main!=='Sin categoría') categoryCounts[main]++;
-      const subs=[...new Set((meta.genres||[]).map(g=>String(g).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-      if(!subs.length) return;
-      const key=main+'||'+subs.join('|');
-      const row=comboCounts.get(key)||{main,subs,count:0};
-      row.count++;
-      comboCounts.set(key,row);
+      const titleKey=coverNorm(x.name||x.title||'');
+      const key=x.seriesKey||seriesKey(x.name||x.title||'');
+      const meta=(key&&catalogMeta.get(key))||catalogMetaByTitle.get(titleKey)||{mainGenre:'',genres:[]};
+      const main=mainCategories.includes(String(meta.mainGenre||'').trim())?String(meta.mainGenre).trim():'';
+      const uniqueKey=key||titleKey||String(x.name||'');
+      if(main && !seenSeriesForCategory.has(uniqueKey)){
+        categoryCounts[main]++;
+        seenSeriesForCategory.add(uniqueKey);
+      }
+      if(!main) return;
+      const subs=[...new Set((meta.genres||[]).map(g=>String(g||'').trim()).filter(Boolean))];
+      subs.forEach(sub=>{
+        const comboKey=main+'||'+sub.toLocaleLowerCase('es');
+        const seenKey=uniqueKey+'||'+comboKey;
+        if(seenSeriesForCombo.has(seenKey)) return;
+        seenSeriesForCombo.add(seenKey);
+        const row=comboCounts.get(comboKey)||{main,sub,count:0};
+        row.count++;
+        comboCounts.set(comboKey,row);
+      });
     });
-    const genreRows=mainCategories.map(category=>[category,categoryCounts[category]]).sort((a,b)=>b[1]-a[1]||mainCategories.indexOf(a[0])-mainCategories.indexOf(b[0]));
+    const genreRows=mainCategories.map(category=>[category,categoryCounts[category]])
+      .sort((a,b)=>b[1]-a[1]||mainCategories.indexOf(a[0])-mainCategories.indexOf(b[0]));
     const maxG=Math.max(1,...genreRows.map(([,n])=>n));
-    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('');
-    const comboRows=[...comboCounts.values()].sort((a,b)=>b.count-a.count||a.main.localeCompare(b.main,'es')||a.subs.join(',').localeCompare(b.subs.join(','),'es')).slice(0,7);
+    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>
+      `<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`
+    ).join('');
+    const comboRows=[...comboCounts.values()]
+      .sort((a,b)=>b.count-a.count||a.main.localeCompare(b.main,'es')||a.sub.localeCompare(b.sub,'es'))
+      .slice(0,7);
     const comboHost=document.getElementById('genreSubgenreBars');
     if(comboHost){
       const maxCombo=Math.max(1,...comboRows.map(x=>x.count));
       comboHost.innerHTML=comboRows.length?comboRows.map(row=>{
-        const label=`${row.main} · ${row.subs.join(', ')}`;
+        const label=`${row.main} · ${row.sub}`;
         return `<div class="proto-bar-row"><span title="${escDetail(label)}">${escDetail(label)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(row.count/maxCombo*100)}%"></div></div><b>${row.count}</b></div>`;
-      }).join(''):'<div class="proto-note">Todavía no hay combinaciones para mostrar.</div>';
+      }).join(''):'<div class="proto-note">Todavía no hay suficientes animes puntuados con género y subgénero para mostrar combinaciones.</div>';
     }
 
     const buckets=[[95,100],[90,94],[85,89],[80,84],[75,79],[70,74],[0,69]];
