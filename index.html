@@ -6105,15 +6105,16 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
       const mainGenre=String(item.mainGenre||'').trim();
       if(mainGenre && !catalogMeta.has(key)) catalogMeta.set(key,{mainGenre});
     }
-    const genres={};
+    const statCategoryOrder=['Romcom','Shonen','Seinen','Romance','Militar','Mecha','Idol','Deportes','Ecchi','Drama','Comedia','Infantil','Isekai','Casi H','Slice of Life'];
+    const genres=Object.fromEntries(statCategoryOrder.map(category=>[category,0]));
     scored.forEach(x=>{
       const meta=catalogMeta.get(x.seriesKey||seriesKey(x.name));
       const g=meta?.mainGenre;
-      if(g) genres[g]=(genres[g]||0)+1;
+      if(g && Object.prototype.hasOwnProperty.call(genres,g)) genres[g]++;
     });
-    const genreRows=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const maxG=genreRows[0]?.[1]||1;
-    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('')||'<div class="proto-note">Todavía no hay suficientes datos.</div>';
+    const genreRows=statCategoryOrder.map(category=>[category,genres[category]]).sort((a,b)=>b[1]-a[1]||statCategoryOrder.indexOf(a[0])-statCategoryOrder.indexOf(b[0]));
+    const maxG=Math.max(1,...genreRows.map(([,n])=>n));
+    document.getElementById('genreBars').innerHTML=genreRows.map(([g,n])=>`<div class="proto-bar-row"><span>${escDetail(g)}</span><div class="proto-bar"><div class="proto-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><b>${n}</b></div>`).join('');
 
     const buckets=[[95,100],[90,94],[85,89],[80,84],[75,79],[70,74],[0,69]];
     const sb=buckets.map(([lo,hi])=>[`${lo}–${hi}`,scored.filter(x=>x.score>=lo&&x.score<=hi).length]);
