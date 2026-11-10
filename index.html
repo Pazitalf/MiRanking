@@ -3027,7 +3027,7 @@ const COVER_RESOLVER_VERSION='2';
 */
 let CATALOG = [];
 let catalogLoaded = false;
-const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261109', { cache: 'force-cache' })
+const catalogReady = fetch('/catalog-ce2bc7c01079.json?v=20261110-stats-fix-1', { cache: 'no-cache' })
   .then(response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
@@ -6035,8 +6035,15 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     // Abrir el panel antes de calcular para que un error de estadísticas
     // no impida mostrar la sección y facilite la inspección del fallo.
     openOnly(legacyStatsPanel);
-    buildPrototypeStats();
-    window.miRankingBadges?.renderOwnProgress?.();
+    // Esperar a que el catálogo termine de cargarse antes de calcular géneros.
+    // Si se calcula antes, CATALOG todavía está vacío y todas las categorías dan 0.
+    Promise.resolve(catalogReady).then(()=>{
+      buildPrototypeStats();
+      window.miRankingBadges?.renderOwnProgress?.();
+    }).catch(err=>{
+      console.error('No se pudieron calcular las estadísticas del catálogo:',err);
+      buildPrototypeStats();
+    });
   });
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{closeAll();setActive(document.getElementById('navRanking'));}));
   [legacyStatsPanel,morePanel,watchingPanel].forEach(p=>p?.addEventListener('click',e=>{if(e.target===p){closeAll();setActive(document.getElementById('navRanking'));}}));
@@ -6096,6 +6103,7 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     // no perder coincidencias cuando el registro puntuado no trae seriesKey.
     const catalogMeta=new Map();
     const catalogMetaByTitle=new Map();
+    const catalogMetaBySagaId=new Map();
     const mainCategories=['Romcom','Shonen','Seinen','Romance','Militar','Mecha','Idol','Deportes','Ecchi','Drama','Comedia','Infantil','Isekai','Casi H','Slice of Life'];
     const mergeMeta=(target,item)=>{
       if(item.mainGenre && !target.mainGenre) target.mainGenre=String(item.mainGenre).trim();
@@ -6111,6 +6119,10 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
       if(key){
         const aggregate=catalogMeta.get(key)||{mainGenre:'',genres:[]};
         catalogMeta.set(key,mergeMeta(aggregate,item));
+      }
+      if(item.sagaId){
+        const sagaAggregate=catalogMetaBySagaId.get(String(item.sagaId))||{mainGenre:'',genres:[]};
+        catalogMetaBySagaId.set(String(item.sagaId),mergeMeta(sagaAggregate,item));
       }
       for(const title of [item.name,...String(item.alt||'').split('|')].filter(Boolean)){
         const titleKey=coverNorm(title);
@@ -6129,7 +6141,10 @@ document.getElementById('exportTop10Image')?.addEventListener('click',async()=>{
     scored.forEach(x=>{
       const titleKey=coverNorm(x.name||x.title||'');
       const key=x.seriesKey||seriesKey(x.name||x.title||'');
-      const meta=(key&&catalogMeta.get(key))||catalogMetaByTitle.get(titleKey)||{mainGenre:'',genres:[]};
+      const meta=(x.sagaId&&catalogMetaBySagaId.get(String(x.sagaId)))
+        || catalogMetaByTitle.get(titleKey)
+        || (key&&catalogMeta.get(key))
+        || {mainGenre:'',genres:[]};
       const main=mainCategories.includes(String(meta.mainGenre||'').trim())?String(meta.mainGenre).trim():'';
       const uniqueKey=key||titleKey||String(x.name||'');
       if(main && !seenSeriesForCategory.has(uniqueKey)){
